@@ -877,8 +877,8 @@ def hero_background_css() -> str:
 
 
 def flat_html(s: str) -> str:
+    """Ubah multi-line HTML (dengan indentasi) menjadi single-line agar ter-render Streamlit."""
     return " ".join(line.strip() for line in s.splitlines() if line.strip())
-
 
 # ==========================================
 # SESSION STATE
@@ -1365,27 +1365,27 @@ def render_hero():
 
 def section_header(icon, title, subtitle=""):
     sub = f"<div class='sub'>{subtitle}</div>" if subtitle else ""
-    st.markdown(f"""
+    st.markdown(flat_html(f"""
     <div class='bng-section'>
       <span class='icon'>{icon}</span>
       <div><h2>{title}</h2>{sub}</div>
     </div>
-    """, unsafe_allow_html=True)
+    """), unsafe_allow_html=True)
 
 
 def stat_card(icon, value, label):
-    return f"""
+    return flat_html(f"""
     <div class='bng-stat-card'>
       <div class='bng-stat-icon'>{icon}</div>
       <div class='bng-stat-value'>{value}</div>
       <div class='bng-stat-label'>{label}</div>
     </div>
-    """
+    """)
 
 
 def attribute_card(icon, name, value, color):
     pct = max(0, min(100, value))
-    return f"""
+    return flat_html(f"""
     <div class='bng-attr-card'>
       <div class='bng-attr-icon'>{icon}</div>
       <div class='bng-attr-name'>{name}</div>
@@ -1394,7 +1394,7 @@ def attribute_card(icon, name, value, color):
         <div class='bng-attr-bar-fill' style='width:{pct}%;background:{color}'></div>
       </div>
     </div>
-    """
+    """)
 
 
 def player_card(player):
@@ -1403,7 +1403,7 @@ def player_card(player):
     alias = player.get("alias", "")
     alias_html = f"<div class='bng-player-alias'>“{esc(alias)}”</div>" if alias else ""
     ovr = player.get("overall", 0)
-    return f"""
+    return flat_html(f"""
     <div class='bng-player-card'>
       <div class='bng-ovr-badge'>{ovr}</div>
       {avatar}
@@ -1413,18 +1413,16 @@ def player_card(player):
         <div class='bng-player-roles'>{roles_html}</div>
       </div>
     </div>
-    """
-
+    """)
 
 def placeholder_box(emoji, title, desc):
-    st.markdown(f"""
+    st.markdown(flat_html(f"""
     <div class='bng-placeholder bng-animate'>
       <div class='emoji'>{emoji}</div>
       <h3>{title}</h3>
       <p>{desc}</p>
     </div>
-    """, unsafe_allow_html=True)
-
+    """), unsafe_allow_html=True)
 
 # ==========================================
 # PAGE: HOME
