@@ -2060,6 +2060,24 @@ def page_team_generator():
                         "Tambahkan pemain di menu Team terlebih dahulu.")
         return
 
+    # ============ INISIALISASI SEMUA SESSION STATE ============
+    if "gen_selected" not in st.session_state or st.session_state.gen_selected is None:
+        st.session_state.gen_selected = [p["nama"] for p in players]
+    if "gen_rules" not in st.session_state:
+        st.session_state.gen_rules = []
+    if "gen_uniform_rules" not in st.session_state:
+        st.session_state.gen_uniform_rules = {}
+    if "gen_num_teams" not in st.session_state:
+        st.session_state.gen_num_teams = 2
+    if "gen_team_uniforms" not in st.session_state:
+        st.session_state.gen_team_uniforms = []
+    if "gen_result" not in st.session_state:
+        st.session_state.gen_result = None
+
+    # Filter nama yang masih valid
+    all_names = [p["nama"] for p in players]
+    st.session_state.gen_selected = [n for n in st.session_state.gen_selected if n in all_names]
+
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "1️⃣ Pemain", "2️⃣ Rules", "3️⃣ Konfigurasi",
         "4️⃣ Generate", "5️⃣ Simpan ke History"
@@ -2069,11 +2087,6 @@ def page_team_generator():
     with tab1:
         section_header("📋", "Player Selection",
                        "Pilih pemain dari database atau tambahkan pemain luar untuk sesi ini")
-
-        all_names = [p["nama"] for p in players]
-        if st.session_state.gen_selected is None:
-            st.session_state.gen_selected = all_names[:]
-        st.session_state.gen_selected = [n for n in st.session_state.gen_selected if n in all_names]
 
         col_a, col_b = st.columns([4, 1])
         with col_a:
@@ -2260,6 +2273,7 @@ def page_team_generator():
                 st.info(f"ℹ️ GK ({gk_count}) lebih sedikit dari jumlah tim "
                         f"({st.session_state.gen_num_teams}).")
 
+            # ---- TOMBOL GENERATE ----
             if st.button("🎲 GENERATE TIM SEKARANG", type="primary", width="stretch",
                          key="gen_do"):
                 with st.spinner("Sedang mengacak & menyeimbangkan tim..."):
@@ -2274,6 +2288,7 @@ def page_team_generator():
                         teams, team_formations, team_uniforms,
                         roles_map, ratings_map
                     )
+                    # Simpan hasil ke session state
                     st.session_state.gen_result = {
                         "teams": teams,
                         "formations": team_formations,
@@ -2284,8 +2299,12 @@ def page_team_generator():
                         "timestamp": datetime.now().isoformat(),
                     }
                 st.balloons()
-                st.toast("✅ Tim berhasil dibagi!", icon="🏆")
+                st.toast("✅ Tim berhasil dibagi! Cek preview di bawah atau tab 5 untuk simpan.",
+                         icon="🏆")
+                # Paksa rerun agar state ter-update di semua tab
+                st.rerun()
 
+            # ---- TAMPILKAN HASIL (jika ada di session state) ----
             if st.session_state.gen_result:
                 res = st.session_state.gen_result
                 players_db = load_players()
@@ -2344,10 +2363,8 @@ def page_team_generator():
                 </div>
                 """), unsafe_allow_html=True)
 
-                # Radar section
                 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
                 render_radar_section(res["teams"], res["uniforms"], players_db)
-
                 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
                 st.download_button(
@@ -2364,11 +2381,70 @@ def page_team_generator():
         section_header("💾", "Simpan ke Match History",
                        "Simpan hasil generate sebagai riwayat pertandingan")
 
+        # Cek hasil generate dari session state
         if not st.session_state.gen_result:
             placeholder_box("🎲", "Belum Ada Hasil Generate",
-                            "Generate tim di tab 4 terlebih dahulu.")
+                            "Buka tab **4️⃣ Generate** dan klik tombol **GENERATE TIM SEKARANG** "
+                            "terlebih dahulu. Setelah itu kembali ke tab ini untuk menyimpan.")
+            # Tambahkan tombol shortcut ke tab 4
+            st.info("💡 **Tips:** Setelah generate, hasil akan otomatis tersimpan di sesi ini. "
+                    "Jangan refresh halaman sebelum menyimpan ke Match History.")
         else:
+            res = st.session_state.gen_result
+
+            # ---- Preview hasil sebelum disimpan ----
+            st.markdown(flat_html("""
+            <div style='background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);
+                        border-radius:12px;padding:14px 18px;margin-bottom:16px'>
+              <div style='font-weight:800;color:#22c55e;margin-bottom:4px'>
+                ✅ Hasil Generate Siap Disimpan
+              </div>
+              <div style='font-size:12px;color:#94a3b8'>
+                Preview di bawah. Isi info match lalu klik "Simpan ke Match History".
+              </div>
+            </div>
+            """), unsafe_allow_html=True)
+
+            # Preview compact
+            cols = st.columns(len(res["teams"]))
+            for i, team in enumerate(res["teams"]):
+                with cols[i]:
+                    uni = res["uniforms"][i]
+                    bg = COLOR_MAP.get(uni, "#757575")
+                    txt_color = "white" if uni in DARK_UNIFORMS else "black"
+                    team_rating = sum(res["ratings_map"].get(p, 50) for p in team)
+                    st.markdown(flat_html(f"""
+                    <div style='text-align:center;padding:12px;
+                                background:rgba(13,35,80,.5);border-radius:12px;
+                                border:2px solid {bg}'>
+                      <div style='font-family:Orbitron,sans-serif;font-weight:900;
+                                  color:#fff;font-size:14px;margin-bottom:6px'>
+                        Team {i+1}
+                      </div>
+                      <div style='display:inline-block;padding:3px 12px;
+                                  background:{bg};color:{txt_color};
+                                  border-radius:12px;font-size:11px;font-weight:800;
+                                  margin-bottom:8px'>
+                        {uni}
+                      </div>
+                      <div style='font-size:11px;color:#94a3b8;margin-bottom:6px'>
+                        {res["formations"][i]}
+                      </div>
+                      <div style='font-family:Orbitron,sans-serif;font-weight:900;
+                                  color:#fbbf24;font-size:18px'>
+                        Σ {team_rating}
+                      </div>
+                      <div style='font-size:11px;color:#94a3b8;margin-top:6px'>
+                        {len(team)} pemain
+                      </div>
+                    </div>
+                    """), unsafe_allow_html=True)
+
+            st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+            # ---- Form Simpan ----
             with st.form("form_save_match"):
+                st.markdown("**📅 Info Match**")
                 c1, c2 = st.columns(2)
                 with c1:
                     tanggal = st.date_input("Tanggal Match", value=datetime.now().date())
@@ -2377,10 +2453,10 @@ def page_team_generator():
                     waktu = st.time_input("Waktu", value=datetime.now().time())
                     catatan = st.text_input("Catatan (opsional)", placeholder="Contoh: Friendly match")
 
+                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
                 submitted = st.form_submit_button("💾 Simpan ke Match History",
                                                   type="primary", width="stretch")
                 if submitted:
-                    res = st.session_state.gen_result
                     matches = store.get_match_history()
                     mid = f"M{datetime.now().strftime('%Y%m%d%H%M%S')}"
                     match_record = {
@@ -2405,201 +2481,19 @@ def page_team_generator():
                     }
                     matches.append(match_record)
                     if store.save_match_history(matches):
-                        st.success(f"✅ Match {mid} berhasil disimpan ke Match History.")
                         st.session_state.gen_result = None
                         st.session_state.flash = ("success",
-                            f"✅ Match {mid} tersimpan. Buka tab Match History untuk mengisi skor.")
+                            f"✅ Match {mid} tersimpan! Cek tab Match History untuk input skor.")
                         st.rerun()
                     else:
                         st.error("⚠️ Gagal menyimpan match.")
 
-
-# ==========================================
-# PAGE: MATCH HISTORY
-# ==========================================
-def page_match_history():
-    section_header("📜", "Match History",
-                   "Riwayat pertandingan yang sudah digenerate & disimpan")
-
-    matches = store.get_match_history()
-
-    if not matches:
-        placeholder_box("📭", "Belum Ada Riwayat Match",
-                        "Generate tim di menu Team Generator, lalu simpan hasilnya ke Match History.")
-        return
-
-    st.metric("Total Match Tersimpan", len(matches))
-    matches_sorted = sorted(matches, key=lambda m: m.get("created_at", ""), reverse=True)
-
-    for idx, match in enumerate(matches_sorted):
-        mid = match["match_id"]
-        tanggal = match.get("tanggal", "-")
-        waktu = match.get("waktu", "")
-        lokasi = match.get("lokasi", "-")
-        catatan = match.get("catatan", "")
-        teams = match.get("teams", [])
-        skor = match.get("skor", {})
-
-        st.markdown(flat_html(f"""
-        <div class='bng-match-card bng-animate'>
-          <div class='bng-match-header'>
-            <div>
-              <span class='bng-match-id'>🏆 {mid}</span>
-              <span class='bng-match-date' style='margin-left:10px'>
-                📅 {tanggal} {waktu} · 📍 {lokasi}
-              </span>
-            </div>
-            <span style='color:#94a3b8;font-size:12px'>{catatan}</span>
-          </div>
-        """), unsafe_allow_html=True)
-
-        if len(teams) >= 2:
-            t1 = teams[0]
-            t2 = teams[1]
-            s1 = skor.get("team1", 0)
-            s2 = skor.get("team2", 0)
-            bg1 = COLOR_MAP.get(t1["uniform"], "#757575")
-            bg2 = COLOR_MAP.get(t2["uniform"], "#757575")
-            st.markdown(flat_html(f"""
-            <div class='bng-match-score'>
-              <div class='bng-match-team'>
-                <div class='name'>{t1['nama']}</div>
-                <div class='uniform'>
-                  <span style='display:inline-block;width:12px;height:12px;border-radius:50%;
-                               background:{bg1};vertical-align:middle;margin-right:4px'></span>
-                  {t1['uniform']} · {t1['formasi']}
-                </div>
-              </div>
-              <div class='bng-match-score-num'>{s1} — {s2}</div>
-              <div class='bng-match-team'>
-                <div class='name'>{t2['nama']}</div>
-                <div class='uniform'>
-                  <span style='display:inline-block;width:12px;height:12px;border-radius:50%;
-                               background:{bg2};vertical-align:middle;margin-right:4px'></span>
-                  {t2['uniform']} · {t2['formasi']}
-                </div>
-              </div>
-            </div>
-            """), unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        with st.expander(f"📝 Input Skor & Detail — {mid}", expanded=False):
-            with st.form(f"form_match_{mid}"):
-                st.markdown("**Input Skor:**")
-                score_cols = st.columns(len(teams))
-                new_skor = {}
-                for i, team in enumerate(teams):
-                    with score_cols[i]:
-                        val = st.number_input(
-                            f"{team['nama']} ({team['uniform']})",
-                            min_value=0, max_value=99,
-                            value=int(skor.get(f"team{i+1}", 0)),
-                            key=f"score_{mid}_t{i+1}"
-                        )
-                        new_skor[f"team{i+1}"] = val
-
-                st.markdown("**Info Match:**")
-                c1, c2 = st.columns(2)
-                with c1:
-                    try:
-                        default_date = datetime.fromisoformat(match["tanggal"]).date()
-                    except Exception:
-                        default_date = datetime.now().date()
-                    new_tanggal = st.date_input("Tanggal", value=default_date, key=f"date_{mid}")
-                    new_lokasi = st.text_input("Lokasi", value=lokasi, key=f"lok_{mid}")
-                with c2:
-                    try:
-                        default_time = datetime.strptime(waktu, "%H:%M").time()
-                    except Exception:
-                        default_time = datetime.now().time()
-                    new_waktu = st.time_input("Waktu", value=default_time, key=f"time_{mid}")
-                    new_catatan = st.text_input("Catatan", value=catatan, key=f"cat_{mid}")
-
-                cbtn1, cbtn2 = st.columns([1, 1])
-                save_score = cbtn1.form_submit_button("💾 Simpan Skor", type="primary",
-                                                       width="stretch")
-                delete_match = cbtn2.form_submit_button("🗑️ Hapus Match", width="stretch")
-
-                if save_score:
-                    for m in matches:
-                        if m["match_id"] == mid:
-                            m["skor"] = new_skor
-                            m["tanggal"] = new_tanggal.isoformat()
-                            m["waktu"] = new_waktu.strftime("%H:%M")
-                            m["lokasi"] = new_lokasi
-                            m["catatan"] = new_catatan
-                            break
-                    if store.save_match_history(matches):
-                        st.success("✅ Skor & info match diperbarui.")
-                        st.rerun()
-
-                if delete_match:
-                    matches = [m for m in matches if m["match_id"] != mid]
-                    if store.save_match_history(matches):
-                        st.warning(f"🗑️ Match {mid} dihapus.")
-                        st.rerun()
-
-            # Detail tim pakai HTML roster
-            st.markdown("**Detail Tim:**")
-            players_db = load_players()
-            for i, team in enumerate(teams):
-                bg = COLOR_MAP.get(team["uniform"], "#757575")
-                txt = "white" if team["uniform"] in DARK_UNIFORMS else "black"
-
-                roster_rows = []
-                for j, pl_name in enumerate(team.get("players", []), 1):
-                    pl_obj = next((p for p in players_db if p["nama"] == pl_name), None)
-                    if pl_obj:
-                        avatar_str = resolve_avatar(pl_obj, size=34, css_class="bng-roster-avatar")
-                    else:
-                        c = color_for(pl_name)
-                        avatar_str = (f"<div class='bng-roster-avatar' style='background:{c};"
-                                      f"width:34px;height:34px'>{esc(initials(pl_name))}</div>")
-
-                    pr = pl_obj["roles"] if pl_obj else []
-                    roles_html = "".join(
-                        f"<span class='bng-roster-role-chip {ROLE_INFO[r]['css']}'>{r}</span>"
-                        for r in pr
-                    )
-                    ovr = pl_obj["overall"] if pl_obj else 50
-                    roster_rows.append(flat_html(f"""
-                    <div class='bng-roster-row'>
-                      <div class='bng-roster-num'>{j}</div>
-                      {avatar_str}
-                      <div class='bng-roster-info'>
-                        <div class='bng-roster-name'>{esc(pl_name)}</div>
-                        <div class='bng-roster-roles'>{roles_html}</div>
-                      </div>
-                      <div class='bng-roster-ovr'>{ovr}</div>
-                    </div>
-                    """))
-
-                st.markdown(flat_html(f"""
-                <div style='background:rgba(13,35,80,.5);border-radius:14px;
-                            padding:14px 16px;margin:10px 0;
-                            border-left:4px solid {bg}'>
-                  <div style='display:flex;justify-content:space-between;align-items:center;
-                              margin-bottom:10px;flex-wrap:wrap;gap:8px'>
-                    <div style='font-family:Orbitron,sans-serif;font-size:15px;
-                                font-weight:900;color:#fff'>
-                      {team['nama']}
-                      <span style='background:{bg};color:{txt};padding:3px 12px;
-                                   border-radius:14px;font-size:11px;margin-left:8px'>
-                        {team['uniform']}
-                      </span>
-                    </div>
-                    <span style='font-size:12px;color:#94a3b8'>
-                      {team['formasi']} · Σ {team.get('rating_total', 0)}
-                    </span>
-                  </div>
-                  <div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-                              gap:6px'>
-                    {''.join(roster_rows)}
-                  </div>
-                </div>
-                """), unsafe_allow_html=True)
-
+            # ---- Tombol Batal / Reset ----
+            if st.button("🗑️ Batalkan Hasil Generate (tanpa simpan)",
+                         width="stretch", key="gen_discard"):
+                st.session_state.gen_result = None
+                st.session_state.flash = ("info", "Hasil generate dibatalkan.")
+                st.rerun()
 
 # ==========================================
 # PAGE: ABOUT
@@ -2665,6 +2559,12 @@ def page_about():
 def main():
     render_navbar()
 
+    # Tampilkan flash message global (dari berbagai aksi)
+    if st.session_state.get("flash"):
+        kind, msg = st.session_state.flash
+        getattr(st, kind)(msg)
+        st.session_state.flash = None
+
     tabs = st.tabs([
         "🏠 Home",
         "👥 Team",
@@ -2685,7 +2585,3 @@ def main():
         page_about()
 
     render_footer()
-
-
-if __name__ == "__main__":
-    main()
