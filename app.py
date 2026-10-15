@@ -900,8 +900,8 @@ def render_navbar():
     st.markdown(nav_html, unsafe_allow_html=True)
 
     # Navigasi pakai st.tabs (paling kompatibel)
-    tabs = st.tabs(["🏠 Home", "👥 Team", "⚽ Team Generator", "📜 Match History", "ℹ️ About"])
-    return tabs
+    # tabs = st.tabs(["🏠 Home", "👥 Team", "⚽ Team Generator", "📜 Match History", "ℹ️ About"])
+    # return tabs
 
 
 def render_footer():
