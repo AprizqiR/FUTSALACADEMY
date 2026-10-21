@@ -1598,27 +1598,27 @@ def draw_png_player_radar(draw, x, y, size, attributes):
 
 
 def draw_png_radar(draw, x, y, w, h, attributes):
-    """Menggambar radar chart tim ke canvas PNG (high contrast)."""
+    """Menggambar radar chart tim ke canvas PNG (high contrast, garis tebal)."""
     categories = list(ATTR_CATEGORIES.keys())
     n = len(categories)
     if n < 3: return
 
     cx, cy = x + w / 2, y + h / 2
-    R = min(w, h) / 2 - 10
+    R = min(w, h) / 2 - 15 # Sedikit lebih kecil agar tidak mentok border
     angles = [-math.pi / 2 + 2 * math.pi * i / n for i in range(n)]
     
     def point(value, angle):
         r = (max(1, min(100, value)) / 100.0) * R
         return (cx + r * math.cos(angle), cy + r * math.sin(angle))
 
-    # 1. Gambar Jaring (Web)
+    # 1. Gambar Jaring (Web) - Abu-abu
     for pct in [0.25, 0.5, 0.75, 1.0]:
         r = R * pct
         pts = [(cx + r * math.cos(a), cy + r * math.sin(a)) for a in angles]
         draw.polygon(pts, outline=(180, 180, 180))
         
     for a in angles:
-        draw.line([(cx, cy), (cx + R * math.cos(a), cy + R * math.sin(a))], fill=(180, 180, 180))
+        draw.line([(cx, cy), (cx + R * math.cos(a), cy + R * math.sin(a))], fill=(200, 200, 200))
 
     # Hitung Nilai
     values = []
@@ -1631,18 +1631,15 @@ def draw_png_radar(draw, x, y, w, h, attributes):
                 count += 1
         values.append(total / count if count else 0)
 
-    # 2. Gambar Area Data (Garis tebal kuning/emas, dengan fill tipis)
+    # 2. Gambar Area Data (Warna Orange Kontras, Garis Tebal)
     poly_pts = [point(v, a) for v, a in zip(values, angles)]
     
-    # Fill (opsional, warna kuning sangat muda)
-    draw.polygon(poly_pts, fill=(254, 243, 199), outline=None)
-    
-    # Stroke (Garis luar tebal, warna emas/kuning solid)
-    draw.polygon(poly_pts, fill=None, outline=(245, 158, 11), width=3)
+    # Gambar stroke luar dengan tebal 4 (sama seperti radar pemain)
+    draw.polygon(poly_pts, fill=(255, 245, 230), outline=(234, 88, 12), width=4)
     
     # 3. Titik Data
     for pt in poly_pts:
-        draw.ellipse([pt[0]-3.5, pt[1]-3.5, pt[0]+3.5, pt[1]+3.5], fill=(245, 158, 11))
+        draw.ellipse([pt[0]-4, pt[1]-4, pt[0]+4, pt[1]+4], fill=(234, 88, 12))
 
 
 def draw_png_player_radar(draw, x, y, size, attributes):
