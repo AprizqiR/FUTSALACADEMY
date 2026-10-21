@@ -1553,7 +1553,7 @@ def _load_font(size, bold=False):
 
 
 def draw_png_player_radar(draw, x, y, size, attributes):
-    """Menggambar mini radar chart per pemain ke canvas PNG."""
+    """Menggambar mini radar chart per pemain ke canvas PNG (high contrast)."""
     categories = list(ATTR_CATEGORIES.keys())
     n = len(categories)
     if n < 3 or not attributes: return
@@ -1566,14 +1566,16 @@ def draw_png_player_radar(draw, x, y, size, attributes):
         r = (max(1, min(100, value)) / 100.0) * R
         return (cx + r * math.cos(angle), cy + r * math.sin(angle))
 
+    # 1. Gambar Jaring (Web) - Abu-abu
     for pct in [0.5, 1.0]:
         r = R * pct
         pts = [(cx + r * math.cos(a), cy + r * math.sin(a)) for a in angles]
-        draw.polygon(pts, outline=(200, 200, 200))
+        draw.polygon(pts, outline=(180, 180, 180))
         
     for a in angles:
-        draw.line([(cx, cy), (cx + R * math.cos(a), cy + R * math.sin(a))], fill=(220, 220, 220))
+        draw.line([(cx, cy), (cx + R * math.cos(a), cy + R * math.sin(a))], fill=(200, 200, 200))
 
+    # Hitung Nilai
     values = []
     for cat in categories:
         cols = ATTR_CATEGORIES[cat]["cols"]
@@ -1584,15 +1586,19 @@ def draw_png_player_radar(draw, x, y, size, attributes):
                 count += 1
         values.append(total / count if count else 0)
 
+    # 2. Gambar Area Data (Tanpa fill transparan, garis tebal oranye)
     poly_pts = [point(v, a) for v, a in zip(values, angles)]
-    draw.polygon(poly_pts, fill=(253, 230, 138), outline=(245, 158, 11), width=1)
     
+    # Gambar garis penghubung dengan tebal 2 (di atas grid)
+    draw.polygon(poly_pts, fill=None, outline=(234, 88, 12), width=2) 
+    
+    # 3. Titik Data
     for pt in poly_pts:
-        draw.ellipse([pt[0]-1.5, pt[1]-1.5, pt[0]+1.5, pt[1]+1.5], fill=(245, 158, 11))
+        draw.ellipse([pt[0]-2, pt[1]-2, pt[0]+2, pt[1]+2], fill=(234, 88, 12))
 
 
 def draw_png_radar(draw, x, y, w, h, attributes):
-    """Menggambar radar chart tim ke canvas PNG."""
+    """Menggambar radar chart tim ke canvas PNG (high contrast)."""
     categories = list(ATTR_CATEGORIES.keys())
     n = len(categories)
     if n < 3: return
@@ -1605,14 +1611,16 @@ def draw_png_radar(draw, x, y, w, h, attributes):
         r = (max(1, min(100, value)) / 100.0) * R
         return (cx + r * math.cos(angle), cy + r * math.sin(angle))
 
+    # 1. Gambar Jaring (Web)
     for pct in [0.25, 0.5, 0.75, 1.0]:
         r = R * pct
         pts = [(cx + r * math.cos(a), cy + r * math.sin(a)) for a in angles]
-        draw.polygon(pts, outline=(150, 150, 150))
+        draw.polygon(pts, outline=(180, 180, 180))
         
     for a in angles:
-        draw.line([(cx, cy), (cx + R * math.cos(a), cy + R * math.sin(a))], fill=(150, 150, 150))
+        draw.line([(cx, cy), (cx + R * math.cos(a), cy + R * math.sin(a))], fill=(180, 180, 180))
 
+    # Hitung Nilai
     values = []
     for cat in categories:
         cols = ATTR_CATEGORIES[cat]["cols"]
@@ -1623,11 +1631,111 @@ def draw_png_radar(draw, x, y, w, h, attributes):
                 count += 1
         values.append(total / count if count else 0)
 
+    # 2. Gambar Area Data (Garis tebal kuning/emas, dengan fill tipis)
     poly_pts = [point(v, a) for v, a in zip(values, angles)]
-    draw.polygon(poly_pts, fill=(253, 230, 138), outline=(245, 158, 11), width=2)
     
+    # Fill (opsional, warna kuning sangat muda)
+    draw.polygon(poly_pts, fill=(254, 243, 199), outline=None)
+    
+    # Stroke (Garis luar tebal, warna emas/kuning solid)
+    draw.polygon(poly_pts, fill=None, outline=(245, 158, 11), width=3)
+    
+    # 3. Titik Data
     for pt in poly_pts:
-        draw.ellipse([pt[0]-3, pt[1]-3, pt[0]+3, pt[1]+3], fill=(245, 158, 11))
+        draw.ellipse([pt[0]-3.5, pt[1]-3.5, pt[0]+3.5, pt[1]+3.5], fill=(245, 158, 11))
+
+
+def draw_png_player_radar(draw, x, y, size, attributes):
+    """Menggambar mini radar chart per pemain ke canvas PNG (high contrast)."""
+    categories = list(ATTR_CATEGORIES.keys())
+    n = len(categories)
+    if n < 3 or not attributes: return
+
+    cx, cy = x + size / 2, y + size / 2
+    R = size / 2 - 2
+    angles = [-math.pi / 2 + 2 * math.pi * i / n for i in range(n)]
+    
+    def point(value, angle):
+        r = (max(1, min(100, value)) / 100.0) * R
+        return (cx + r * math.cos(angle), cy + r * math.sin(angle))
+
+    # 1. Gambar Jaring (Web) - Abu-abu
+    for pct in [0.5, 1.0]:
+        r = R * pct
+        pts = [(cx + r * math.cos(a), cy + r * math.sin(a)) for a in angles]
+        draw.polygon(pts, outline=(180, 180, 180))
+        
+    for a in angles:
+        draw.line([(cx, cy), (cx + R * math.cos(a), cy + R * math.sin(a))], fill=(200, 200, 200))
+
+    # Hitung Nilai
+    values = []
+    for cat in categories:
+        cols = ATTR_CATEGORIES[cat]["cols"]
+        total, count = 0, 0
+        for c in cols:
+            if c in attributes:
+                total += attributes[c]
+                count += 1
+        values.append(total / count if count else 0)
+
+    # 2. Gambar Area Data (Tanpa fill transparan, garis tebal oranye)
+    poly_pts = [point(v, a) for v, a in zip(values, angles)]
+    
+    # Gambar garis penghubung dengan tebal 2 (di atas grid)
+    draw.polygon(poly_pts, fill=None, outline=(234, 88, 12), width=2) 
+    
+    # 3. Titik Data
+    for pt in poly_pts:
+        draw.ellipse([pt[0]-2, pt[1]-2, pt[0]+2, pt[1]+2], fill=(234, 88, 12))
+
+
+def draw_png_radar(draw, x, y, w, h, attributes):
+    """Menggambar radar chart tim ke canvas PNG (high contrast)."""
+    categories = list(ATTR_CATEGORIES.keys())
+    n = len(categories)
+    if n < 3: return
+
+    cx, cy = x + w / 2, y + h / 2
+    R = min(w, h) / 2 - 10
+    angles = [-math.pi / 2 + 2 * math.pi * i / n for i in range(n)]
+    
+    def point(value, angle):
+        r = (max(1, min(100, value)) / 100.0) * R
+        return (cx + r * math.cos(angle), cy + r * math.sin(angle))
+
+    # 1. Gambar Jaring (Web)
+    for pct in [0.25, 0.5, 0.75, 1.0]:
+        r = R * pct
+        pts = [(cx + r * math.cos(a), cy + r * math.sin(a)) for a in angles]
+        draw.polygon(pts, outline=(180, 180, 180))
+        
+    for a in angles:
+        draw.line([(cx, cy), (cx + R * math.cos(a), cy + R * math.sin(a))], fill=(180, 180, 180))
+
+    # Hitung Nilai
+    values = []
+    for cat in categories:
+        cols = ATTR_CATEGORIES[cat]["cols"]
+        total, count = 0, 0
+        for c in cols:
+            if c in attributes:
+                total += attributes[c]
+                count += 1
+        values.append(total / count if count else 0)
+
+    # 2. Gambar Area Data (Garis tebal kuning/emas, dengan fill tipis)
+    poly_pts = [point(v, a) for v, a in zip(values, angles)]
+    
+    # Fill (opsional, warna kuning sangat muda)
+    draw.polygon(poly_pts, fill=(254, 243, 199), outline=None)
+    
+    # Stroke (Garis luar tebal, warna emas/kuning solid)
+    draw.polygon(poly_pts, fill=None, outline=(245, 158, 11), width=3)
+    
+    # 3. Titik Data
+    for pt in poly_pts:
+        draw.ellipse([pt[0]-3.5, pt[1]-3.5, pt[0]+3.5, pt[1]+3.5], fill=(245, 158, 11))
 
 
 def render_teams_png(teams, team_formations, team_uniforms, roles_map, ratings, players_db=None):
