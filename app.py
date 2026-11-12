@@ -2018,9 +2018,16 @@ def player_card(player):
     alias_html = f"<div class='bng-player-alias'>“{esc(alias)}”</div>" if alias else ""
     ovr = player.get("overall", 0)
     radar_html = mini_radar_svg(player.get("attributes", {}), size=54)
+    
+    # Cek status admin
+    is_admin = st.session_state.get("is_admin", False)
+    
+    # Badge OVR hanya muncul jika admin
+    ovr_badge = f"<div class='bng-ovr-badge'>{ovr}</div>" if is_admin else ""
+    
     return flat_html(f"""
     <div class='bng-player-card'>
-      <div class='bng-ovr-badge'>{ovr}</div>
+      {ovr_badge}
       {avatar}
       <div class='bng-player-info'>
         <div class='bng-player-name'>{esc(player['nama'])}</div>
@@ -2032,7 +2039,6 @@ def player_card(player):
       </div>
     </div>
     """)
-
 
 def placeholder_box(emoji, title, desc):
     st.markdown(flat_html(f"""
