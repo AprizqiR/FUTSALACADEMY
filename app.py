@@ -1169,12 +1169,25 @@ if not st.session_state.gen_result_loaded:
         st.session_state.gen_result = loaded
     st.session_state.gen_result_loaded = True
 
+def calculate_overall(attributes: dict) -> int:
+    """Menghitung rata-rata dari semua atribut untuk mendapatkan Overall Rating."""
+    if not attributes:
+        return 50
+    # Ambil semua nilai yang ada di dalam dictionary attributes
+    valid_values = [v for v in attributes.values() if isinstance(v, (int, float))]
+    if not valid_values:
+        return 50
+    # Hitung rata-rata dan bulatkan
+    return int(round(sum(valid_values) / len(valid_values)))
 
 def load_players(force: bool = False) -> list:
     if st.session_state.players_cache is None or force:
-        st.session_state.players_cache = store.get_players()
+        players = store.get_players()
+        # Hitung ulang overall untuk setiap pemain berdasarkan atributnya
+        for p in players:
+            p["overall"] = calculate_overall(p.get("attributes", {}))
+        st.session_state.players_cache = players
     return st.session_state.players_cache
-
 
 def refresh_players():
     st.session_state.players_cache = store.get_players()
