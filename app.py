@@ -7,6 +7,7 @@ Data : Database pemain = Google Sheet (baca & tulis dua arah).
        Cadangan lokal: players_db.json (dipakai bila Sheet tidak terjangkau).
 
 Update v5.9:
+  - Avatar pemain dibaca dari folder Google Drive (GDRIVE_AVATAR_FOLDER_ID).
   - Hasil Team Generate (generate terakhir) disimpan di tab "Team Generate".
   - Riwayat match juga disimpan di Google Sheet (tab "Match History").
   - Database pemain diambil dari Google Sheet. Tambah / edit / hapus pemain
@@ -26,6 +27,8 @@ import os
 import io
 import math
 import random
+import re
+from concurrent.futures import ThreadPoolExecutor
 import time
 import copy
 import base64
@@ -33,15 +36,17 @@ from pathlib import Path
 from html import escape as esc
 from collections import defaultdict
 from datetime import datetime
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from urllib.parse import quote
 
 try:  # opsional: hanya perlu untuk menulis ke Google Sheet
     import gspread
     from google.oauth2.service_account import Credentials as _GCreds
+    from google.auth.transport.requests import AuthorizedSession
 except ImportError:  # pragma: no cover
     gspread = None
     _GCreds = None
+    AuthorizedSession = None
 
 # ==========================================
 # KONFIGURASI HALAMAN
@@ -947,7 +952,8 @@ GSHEET_GEN_WORKSHEET_DEFAULT = "Team Generate"    # hasil generate terakhir (dit
 GEN_HEADERS = ["timestamp", "team", "uniform", "formasi", "no", "pemain",
                "roles", "ovr", "total_ovr_tim"]
 MATCH_CACHE_TTL = 30                            # detik, hemat kuota API Google
-GSHEET_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+GSHEET_SCOPES = ["https://www.googleapis.com/auth/spreadsheets",
+                 "https://www.googleapis.com/auth/drive.readonly"]   # drive: hanya baca foto avatar
 
 # ==========================================
 # SEED DATA (Updated v5.8)
@@ -1090,6 +1096,129 @@ def _service_account_info():
 def _gs_client(info_json: str):
     creds = _GCreds.from_service_account_info(json.loads(info_json), scopes=GSHEET_SCOPES)
     return gspread.authorize(creds)
+
+
+# ==========================================
+# AVATAR DARI FOLDER GOOGLE DRIVE
+# ==========================================
+# Nama file foto = ID pemain (P001.jpg). Alias / nama pemain juga dikenali.
+AVATAR_MIME_OK = ("image/jpeg", "image/png", "image/webp")
+AVATAR_SIZE_PX = 160
+AVATAR_MAX_BYTES = 15 * 1024 * 1024
+
+
+def _norm_key(text) -> str:
+    return re.sub(r"[^a-z0-9]", "", str(text or "").lower())
+
+
+def _clean_folder_id(raw) -> str:
+    """Terima ID folder polos ATAU link lengkap folder Drive."""
+    raw = str(raw or "").strip().replace("'", "")
+    m = re.search(r"folders/([A-Za-z0-9_-]+)", raw)
+    return m.group(1) if m else raw
+
+
+def _drive_session(info: dict):
+    creds = _GCreds.from_service_account_info(info, scopes=GSHEET_SCOPES)
+    return AuthorizedSession(creds)
+
+
+def drive_list_images(session, folder_id: str):
+    """Return (foto_didukung, file_lain) di dalam folder."""
+    files, token = [], None
+    while True:
+        params = {"q": f"'{folder_id}' in parents and trashed=false",
+                  "fields": "nextPageToken, files(id,name,mimeType,modifiedTime,size)",
+                  "pageSize": 1000, "supportsAllDrives": "true", "includeItemsFromAllDrives": "true"}
+        if token:
+            params["pageToken"] = token
+        r = session.get("https://www.googleapis.com/drive/v3/files", params=params, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        files += data.get("files", [])
+        token = data.get("nextPageToken")
+        if not token:
+            break
+    return ([f for f in files if f.get("mimeType") in AVATAR_MIME_OK],
+            [f for f in files if f.get("mimeType") not in AVATAR_MIME_OK])
+
+
+def _make_avatar_uri(data: bytes):
+    """Potong persegi + perkecil (agar ringan), kembalikan data-URI."""
+    try:
+        img = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
+        has_alpha = "A" in img.getbands()
+        img = ImageOps.fit(img.convert("RGBA" if has_alpha else "RGB"), (AVATAR_SIZE_PX, AVATAR_SIZE_PX))
+        buf = io.BytesIO()
+        if has_alpha:
+            img.save(buf, "PNG", optimize=True)
+            mime = "image/png"
+        else:
+            img.save(buf, "JPEG", quality=85)
+            mime = "image/jpeg"
+        return f"data:{mime};base64,{base64.b64encode(buf.getvalue()).decode()}"
+    except Exception:
+        return None
+
+
+@st.cache_resource(show_spinner=False)
+def _avatar_blob_store() -> dict:
+    return {}   # {(file_id, modifiedTime): data-URI} -> foto tidak diunduh ulang bila tidak berubah
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def drive_avatar_map(folder_id: str, info_json: str) -> dict:
+    """{nama_file_ternormalisasi: data-URI}. Daftar folder dicek ulang tiap 5 menit."""
+    session = _drive_session(json.loads(info_json))
+    images, _ = drive_list_images(session, folder_id)
+    blobs = _avatar_blob_store()
+    todo = [f for f in images
+            if (f["id"], f.get("modifiedTime")) not in blobs and int(f.get("size") or 0) <= AVATAR_MAX_BYTES]
+
+    def fetch(f):
+        try:
+            r = session.get(f"https://www.googleapis.com/drive/v3/files/{f['id']}",
+                            params={"alt": "media", "supportsAllDrives": "true"}, timeout=40)
+            r.raise_for_status()
+            return f, _make_avatar_uri(r.content)
+        except Exception:
+            return f, None
+
+    if todo:
+        with ThreadPoolExecutor(max_workers=6) as ex:
+            for f, uri in ex.map(fetch, todo):
+                if uri:
+                    blobs[(f["id"], f.get("modifiedTime"))] = uri
+    out = {}
+    for f in sorted(images, key=lambda x: x["name"]):
+        uri = blobs.get((f["id"], f.get("modifiedTime")))
+        key = _norm_key(os.path.splitext(f["name"])[0])
+        if uri and key and key not in out:
+            out[key] = uri
+    return out
+
+
+def drive_avatar_uri(player: dict):
+    """Data-URI foto pemain dari Drive, atau None (belum diatur / tidak ada / gagal)."""
+    folder = _clean_folder_id(_secret("GDRIVE_AVATAR_FOLDER_ID"))
+    info = _service_account_info()
+    if not folder or not info or _GCreds is None or AuthorizedSession is None:
+        return None
+    now = time.time()
+    if now < st.session_state.get("_avatar_retry_at", 0):
+        return None
+    try:
+        amap = drive_avatar_map(folder, json.dumps(info, sort_keys=True))
+        st.session_state["_avatar_err"] = ""
+    except Exception as e:
+        st.session_state["_avatar_err"] = f"{type(e).__name__}: {e}"
+        st.session_state["_avatar_retry_at"] = now + 60   # jangan coba terus-menerus
+        return None
+    for key in (player.get("id"), player.get("alias"), player.get("nama")):
+        k = _norm_key(key)
+        if k and k in amap:
+            return amap[k]
+    return None
 
 
 def _to_int(v, default=50):
@@ -1304,7 +1433,8 @@ class GoogleSheetStore(JSONStore):
                 "ditemukan" if name in titles else "belum ada — akan dibuat otomatis saat pertama dipakai")
         try:
             ws = self._ws()
-            n = len(sheet_values_to_players(ws.get_all_values(value_render_option="UNFORMATTED_VALUE")))
+            plist = sheet_values_to_players(ws.get_all_values(value_render_option="UNFORMATTED_VALUE"))
+            n = len(plist)
             add(n > 0, "Baca data pemain", f"{n} pemain terbaca" if n else "tidak ada pemain terbaca — cek format kolom")
         except Exception as e:
             add(False, "Baca data pemain", e)
@@ -1315,6 +1445,34 @@ class GoogleSheetStore(JSONStore):
             add(True, "Izin tulis (Editor)", "OK")
         except Exception as e:
             add(False, "Izin tulis (Editor)", f"{e} — pastikan Sheet dibagikan sebagai Editor ke client_email")
+        # ---- Avatar (Google Drive) ----
+        folder = _clean_folder_id(_secret("GDRIVE_AVATAR_FOLDER_ID"))
+        if not folder:
+            add(None, "Folder avatar Drive", "belum diatur (tambahkan GDRIVE_AVATAR_FOLDER_ID di Secrets)")
+        else:
+            try:
+                images, others = drive_list_images(_drive_session(info), folder)
+                extra = f"; {len(others)} file diabaikan (format tidak didukung)" if others else ""
+                if images:
+                    add(True, "Folder avatar Drive", f"{len(images)} foto terbaca{extra}")
+                else:
+                    add(None, "Folder avatar Drive",
+                        f"tidak ada foto — folder kosong atau belum dibagikan ke client_email{extra}")
+                names = {_norm_key(os.path.splitext(f["name"])[0]) for f in images}
+                no_photo = [p["nama"] for p in plist
+                            if not ({_norm_key(p["id"]), _norm_key(p["alias"]), _norm_key(p["nama"])} & names)]
+                matched = len(plist) - len(no_photo)
+                detail = f"{matched}/{len(plist)} pemain punya foto"
+                if no_photo:
+                    detail += ". Belum ada: " + ", ".join(no_photo[:8]) + ("…" if len(no_photo) > 8 else "")
+                add(True if matched else None, "Pencocokan foto ↔ pemain", detail)
+                keys = {_norm_key(x) for p in plist for x in (p["id"], p["alias"], p["nama"])}
+                orphan = [f["name"] for f in images if _norm_key(os.path.splitext(f["name"])[0]) not in keys]
+                if orphan:
+                    add(None, "Foto tanpa pemain", ", ".join(orphan[:8]) + " — nama file tidak cocok dengan ID/alias/nama")
+            except Exception as e:
+                add(False, "Folder avatar Drive",
+                    f"{type(e).__name__}: {e} — cek ID folder, Drive API aktif, dan folder dibagikan ke client_email")
         return out
 
     # ---------- Match History ----------
@@ -1595,6 +1753,11 @@ def image_to_base64(path: Path) -> str | None:
 
 def resolve_avatar(player: dict, size: int = 56, css_class: str = "bng-avatar") -> str:
     pid = player.get("id", "")
+    drive_uri = drive_avatar_uri(player)
+    if drive_uri:
+        return (f"<div class='{css_class}' style='background:{color_for(player['nama'])};"
+                f"width:{size}px;height:{size}px'>"
+                f"<img src='{drive_uri}' alt='{esc(player['nama'])}'></div>")
     for ext in ("png", "jpg", "jpeg", "webp"):
         img_path = AVATARS_DIR / f"{pid}.{ext}"
         b64 = image_to_base64(img_path)
@@ -2727,11 +2890,15 @@ def page_team():
             st.info("ℹ️ Mode baca saja: kredensial Google belum diatur, jadi perubahan belum bisa disimpan ke Google Sheet.")
         if st.button("🔄 Sinkronkan dari Google Sheet", key="btn_sync_sheet"):
             load_players(force=True)
-            st.session_state.flash = ("info", "🔄 Data pemain disinkronkan dari Google Sheet.")
+            drive_avatar_map.clear()
+            st.session_state["_avatar_retry_at"] = 0
+            st.session_state.flash = ("info", "🔄 Data pemain & foto avatar disinkronkan.")
             st.rerun()
         with st.expander("🔌 Status Koneksi Google Sheet", expanded=False):
             sumber = "Google Sheet" if store.source == "sheet" else "cadangan lokal (players_db.json)"
             st.caption(f"Sumber data pemain saat ini: **{sumber}**")
+            if st.session_state.get("_avatar_err"):
+                st.warning(f"⚠️ Foto avatar dari Drive gagal dimuat: {st.session_state['_avatar_err']}")
             if st.button("🧪 Tes Koneksi", key="btn_test_gs"):
                 with st.spinner("Memeriksa koneksi..."):
                     checks = store.diagnose()
