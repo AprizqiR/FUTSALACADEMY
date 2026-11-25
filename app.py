@@ -1318,7 +1318,7 @@ class GoogleSheetStore(JSONStore):
         return out
 
     # ---------- Match History ----------
-    def _ensure_match_ws(self):
+    def _ensure_tab(self, title: str, headers: list, migrate=None):
         """Ambil tab; buat bila belum ada. Tab kosong diberi header. Tab yang sudah berisi
         data lain (A1 bukan header kita) TIDAK ditimpa -> error yang jelas."""
         sh = self._sh()
