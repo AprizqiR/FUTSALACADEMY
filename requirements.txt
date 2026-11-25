@@ -1,3 +1,5 @@
 streamlit>=1.50
 pandas
 Pillow
+gspread>=6.0
+google-auth>=2.0
