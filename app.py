@@ -7,6 +7,8 @@ Data : Database pemain = Google Sheet (baca & tulis dua arah).
        Cadangan lokal: players_db.json (dipakai bila Sheet tidak terjangkau).
 
 Update v5.9:
+  - Kartu pemain bisa diklik -> jendela profil (radar, atribut, posisi). Angka hanya untuk admin.
+  - Admin: avatar pemain, OVR otomatis (rata-rata 12 stat, tanpa slider), konfirmasi hapus.
   - Avatar pemain dibaca dari folder Google Drive (GDRIVE_AVATAR_FOLDER_ID).
   - Hasil Team Generate (generate terakhir) disimpan di tab "Team Generate".
   - Riwayat match juga disimpan di Google Sheet (tab "Match History").
@@ -821,6 +823,76 @@ label { color: #cbd5e1 !important; }
   letter-spacing: .06em;
 }
 .bng-footer small { color: #64748b; }
+
+/* ============ ROSTER KLIK + PROFIL (v5.9) ============ */
+.st-key-roster {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px !important;
+}
+[class*="st-key-card_"] { position: relative; }
+[class*="st-key-cardbtn_"] {
+  position: absolute !important; inset: 0; z-index: 5;
+  margin: 0 !important; width: 100% !important; height: 100% !important;
+}
+[class*="st-key-cardbtn_"] [data-testid="stButton"] { width: 100% !important; height: 100% !important; }
+[class*="st-key-cardbtn_"] button {
+  width: 100% !important; height: 100% !important; min-height: 100% !important;
+  opacity: 0 !important; cursor: pointer;
+  background: transparent !important; box-shadow: none !important; border: none !important;
+}
+[class*="st-key-card_"]:hover .bng-player-card {
+  transform: translateY(-4px);
+  border-color: rgba(251,191,36,.6);
+  box-shadow: 0 14px 34px rgba(251,191,36,.15);
+}
+[class*="st-key-card_"]:hover .bng-player-card::before { opacity: 1; }
+[class*="st-key-card_"]:hover .bng-player-card svg { transform: scale(1.1) rotate(5deg); }
+
+[data-testid="stDialog"] > div {                      /* kartu dialog (pembungkus role=dialog) */
+  background: linear-gradient(160deg, #10264D, #0B1B38) !important;
+  border: 1px solid rgba(23,105,194,.45);
+  border-radius: 22px;
+}
+[data-testid="stDialog"] [role="dialog"] { background: transparent !important; }
+[data-testid="stDialog"] [role="dialog"] h1,
+[data-testid="stDialog"] [role="dialog"] h2,
+[data-testid="stDialog"] [role="dialog"] h3,
+[data-testid="stDialog"] [role="dialog"] p,
+[data-testid="stDialog"] [role="dialog"] label { color: #fff !important; }
+[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] { color: #fff !important; }
+
+.bng-prof-head { display: flex; align-items: center; gap: 18px; margin-bottom: 14px; flex-wrap: wrap; }
+.bng-prof-name { font-size: 1.45rem; font-weight: 800; color: #fff; line-height: 1.15; }
+.bng-prof-alias { color: var(--bng-text-dim); font-size: .9rem; margin-top: 2px; }
+.bng-prof-pos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.bng-pos-item {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+  border-radius: 10px; font-size: 12px; font-weight: 700; color: #e0ecf8;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(23,105,194,.35);
+}
+.bng-pos-item b { color: var(--bng-yellow); font-size: 9px; letter-spacing: .08em; }
+.bng-prof-ovr {
+  margin-left: auto; text-align: center; padding: 8px 18px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--bng-yellow), #fde68a); color: var(--bng-navy);
+  font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 30px; line-height: 1;
+}
+.bng-prof-ovr span { display: block; font-size: 10px; letter-spacing: .15em; margin-bottom: 4px; }
+.bng-warn { padding: 12px 14px; border-radius: 12px; margin: 12px 0; font-size: 13px; line-height: 1.5;
+  background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.45); color: #fde68a; }
+.bng-admin-head { display: flex; align-items: center; gap: 16px; margin: 8px 0 18px 0; }
+.bng-admin-head .t { font-size: 1.1rem; font-weight: 800; color: #fff; }
+.bng-admin-head .t small { font-weight: 600; color: var(--bng-yellow); margin-left: 6px; }
+.bng-admin-head .d { font-size: 12.5px; color: var(--bng-text-dim); margin-top: 3px; }
+.bng-admin-head code { background: rgba(255,255,255,.1); color: #fde68a; padding: 1px 6px; border-radius: 5px; }
+.bng-bar-title {
+  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  margin: 14px 0 6px 0; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.bng-bar-row { display: grid; grid-template-columns: 112px 1fr 30px; gap: 10px; align-items: center; margin: 6px 0; font-size: 12px; color: #cbd5e1; }
+.bng-bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; }
+.bng-bar > i { display: block; height: 100%; border-radius: 4px; }
+.bng-bar-val { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #fff; text-align: right; font-size: 12px; }
 
 /* ============ ANIMATION ============ */
 @keyframes fadeInUp {
@@ -1809,6 +1881,8 @@ _defaults = {
     "show_save_form": False,
     "gen_count": 0,
     "gen_history": [],
+    "edit_nonce": 0,   # naikkan -> field form Edit kembali ke data tersimpan
+    "add_nonce": 0,    # naikkan -> field form Tambah dikosongkan
 }
 for k, v in _defaults.items():
     if k not in st.session_state:
@@ -2079,7 +2153,7 @@ def compute_team_attributes(team_players, players_db):
     return result
 
 
-def radar_chart_svg(categories, datasets, width=340, height=320):
+def radar_chart_svg(categories, datasets, width=340, height=320, show_legend=True):
     W, H = width, height
     cx, cy = W / 2, H / 2 + 6
     R = min(W, H) / 2 - 46
@@ -2109,13 +2183,14 @@ def radar_chart_svg(categories, datasets, width=340, height=320):
         for v, a in zip(ds["values"], angles):
             x, y = point(v, a)
             parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.4" fill="{ds["color"]}" stroke="#0B1B38" stroke-width="1.6"/>')
-    legend_y = H - 12
-    total_legend_width = sum(90 for _ in datasets)
-    lx_start = (W - total_legend_width) / 2 + 12
-    for i, ds in enumerate(datasets):
-        x = lx_start + i * 90
-        parts.append(f'<circle cx="{x:.1f}" cy="{legend_y}" r="5" fill="{ds["color"]}"/>')
-        parts.append(f'<text x="{x + 10:.1f}" y="{legend_y + 4}" fill="#e0ecf8" font-size="11" font-weight="700" font-family="Inter, sans-serif">{ds.get("label", "")}</text>')
+    if show_legend:
+        legend_y = H - 12
+        total_legend_width = sum(90 for _ in datasets)
+        lx_start = (W - total_legend_width) / 2 + 12
+        for i, ds in enumerate(datasets):
+            x = lx_start + i * 90
+            parts.append(f'<circle cx="{x:.1f}" cy="{legend_y}" r="5" fill="{ds["color"]}"/>')
+            parts.append(f'<text x="{x + 10:.1f}" y="{legend_y + 4}" fill="#e0ecf8" font-size="11" font-weight="700" font-family="Inter, sans-serif">{ds.get("label", "")}</text>')
     parts.append("</svg>")
     return " ".join(parts)
 
@@ -2615,7 +2690,7 @@ def render_footer():
       <p style='margin:8px 0 0 0;color:#94a3b8;font-size:.82rem'>
         Pantang menyerah meski skor tidak berpihak — <i>Never give up, even when the score isn't on our side.</i>
       </p>
-      <small>© 2026 BIAENERGI Futsal Academy · v5.8</small>
+      <small>© 2026 BIAENERGI Futsal Academy · v5.9</small>
     </div>
     """), unsafe_allow_html=True)
 
@@ -2690,7 +2765,7 @@ def player_card(player):
     ovr_badge = f"<div class='bng-ovr-badge'>{ovr}</div>" if is_admin else ""
     
     return flat_html(f"""
-    <div class='bng-player-card'>
+    <div class='bng-player-card bng-animate'>
       {ovr_badge}
       {avatar}
       <div class='bng-player-info'>
@@ -2834,6 +2909,272 @@ def page_home():
 # ==========================================
 # PAGE: TEAM
 # ==========================================
+# ==========================================
+# PROFIL PEMAIN, ADMIN EDIT/TAMBAH (v5.9)
+# ==========================================
+ATTR_NAMES = {
+    "STA": "Stamina", "SPE": "Speed", "STR": "Strength", "CON": "Control",
+    "DRI": "Dribbling", "PAS": "Passing", "SHP": "Shot Power", "TAC": "Tackling",
+    "VIS": "Vision", "AGR": "Aggressiveness", "TMW": "Teamwork", "POS": "GK Positioning",
+}
+ATTR_GROUPS = [
+    ("Physical", PHY_COLS, "#1769C2"),
+    ("Technical", TEC_COLS, "#DC4B14"),
+    ("Mental & Tactics", MTC_COLS, "#a855f7"),
+    ("Goalkeeper", GKS_COLS, "#FBBF24"),
+]
+
+
+def next_player_id(players: list) -> str:
+    nums = [int(p["id"][1:]) for p in players if p["id"].startswith("P") and p["id"][1:].isdigit()]
+    return f"P{(max(nums) + 1) if nums else 1:03d}"
+
+
+def player_category_values(attributes: dict) -> list:
+    """Nilai 6 kategori radar (rata-rata kolom per kategori)."""
+    vals = []
+    for info in ATTR_CATEGORIES.values():
+        got = [attributes[c] for c in info["cols"] if isinstance(attributes.get(c), (int, float))]
+        vals.append(sum(got) / len(got) if got else 0)
+    return vals
+
+
+def attr_bars_html(attributes: dict, show_numbers: bool) -> str:
+    """Bar atribut per kelompok. Angka HANYA ditulis ke HTML bila show_numbers (admin)."""
+    out = []
+    for title, cols, color in ATTR_GROUPS:
+        out.append(f"<div class='bng-bar-title' style='color:{color}'>{title}</div>")
+        for c in cols:
+            v = int(attributes.get(c, 0) or 0)
+            num = f"<span class='bng-bar-val'>{v}</span>" if show_numbers else "<span></span>"
+            out.append(f"<div class='bng-bar-row'><span>{ATTR_NAMES.get(c, c)}</span>"
+                       f"<div class='bng-bar'><i style='width:{max(2, min(100, v))}%;background:{color}'></i></div>{num}</div>")
+    return "".join(out)
+
+
+def photo_status(player: dict) -> str:
+    folder = _clean_folder_id(_secret("GDRIVE_AVATAR_FOLDER_ID"))
+    if not folder:
+        return "📷 Folder Drive belum diatur — memakai foto lokal / Photo URL / inisial."
+    if st.session_state.get("_avatar_err"):
+        return "📷 Foto dari Drive gagal dimuat (cek Status Koneksi)."
+    if drive_avatar_uri(player):
+        return "📷 Foto ditemukan di folder Drive."
+    return f"📷 Belum ada foto di Drive — unggah <code>{player['id']}.jpg</code> (JPG/PNG/WebP) ke folder avatar."
+
+
+@st.dialog("Profil Pemain", width="large")
+def player_profile_dialog(pid: str):
+    players = load_players()
+    p = next((x for x in players if x["id"] == pid), None)
+    if not p:
+        st.warning("Pemain tidak ditemukan.")
+        return
+    is_admin = bool(st.session_state.get("is_admin", False))
+    attrs = p.get("attributes", {})
+    roles = [r for r in p.get("roles", []) if r in ROLE_INFO][:4]
+    pos_items = "".join(
+        f"<span class='bng-pos-item'><b>{lab}</b>{ROLE_INFO[r]['emoji']} {ROLE_INFO[r]['nama']}</span>"
+        for lab, r in zip(("1ST", "2ND", "3RD", "4TH"), roles))
+    alias = p.get("alias", "")
+    alias_html = f"<div class='bng-prof-alias'>“{esc(alias)}”</div>" if alias else ""
+    ovr_html = (f"<div class='bng-prof-ovr'><span>OVR</span>{calculate_overall(attrs)}</div>" if is_admin else "")
+    st.markdown(flat_html(f"""
+    <div class='bng-prof-head'>
+      {resolve_avatar(p, size=110, css_class='bng-avatar')}
+      <div>
+        <div class='bng-prof-name'>{esc(p['nama'])}</div>
+        {alias_html}
+        <div class='bng-prof-pos'>{pos_items}</div>
+      </div>
+      {ovr_html}
+    </div>"""), unsafe_allow_html=True)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        svg = radar_chart_svg(
+            [c.upper() for c in ATTR_CATEGORIES.keys()],
+            [{"label": alias or p["nama"], "values": player_category_values(attrs), "color": "#DC4B14"}],
+            width=400, height=300, show_legend=False)
+        st.markdown(svg, unsafe_allow_html=True)
+    with c2:
+        st.markdown(attr_bars_html(attrs, show_numbers=is_admin), unsafe_allow_html=True)
+    if not is_admin:
+        st.caption("Angka detail hanya terlihat oleh admin.")
+    else:
+        if st.button("✏️ Edit pemain ini", type="primary", key=f"prof_edit_{pid}"):
+            st.session_state["edit_select_pid"] = pid
+            st.session_state.flash = ("info", f"✏️ {p['nama']} dipilih di “Kelola Database Pemain” (gulir ke bawah).")
+            st.rerun()
+
+
+@st.dialog("Hapus pemain?")
+def confirm_delete_dialog(pid: str):
+    players = load_players()
+    p = next((x for x in players if x["id"] == pid), None)
+    if not p:
+        st.warning("Pemain tidak ditemukan.")
+        return
+    st.markdown(flat_html(f"""
+    <div class='bng-prof-head'>
+      {resolve_avatar(p, size=84, css_class='bng-avatar')}
+      <div><div class='bng-prof-name'>{esc(p['nama'])}</div>
+      <div class='bng-prof-alias'>ID {esc(pid)}{' · “' + esc(p.get('alias', '')) + '”' if p.get('alias') else ''}</div></div>
+    </div>"""), unsafe_allow_html=True)
+    st.markdown("<div class='bng-warn'>⚠️ Baris pemain ini akan dihapus dari Google Sheet. "
+                "Jika salah hapus, pulihkan lewat <b>File → Version history</b> di Google Sheet.</div>",
+                unsafe_allow_html=True)
+    b1, b2 = st.columns(2)
+    if b1.button("🗑️ Ya, hapus", type="primary", width="stretch", key=f"confirm_del_{pid}"):
+        remaining = [x for x in players if x["id"] != pid]
+        if store.save_players(remaining):
+            refresh_players()
+            st.session_state.edit_nonce += 1
+            st.session_state.pop("edit_select_pid", None)
+            st.session_state.flash = ("warning", f"🗑️ '{p['nama']}' dihapus.")
+            st.rerun()
+        else:
+            st.error(f"⚠️ {store.last_error or 'Gagal menghapus.'}")
+    if b2.button("Batal", width="stretch", key=f"cancel_del_{pid}"):
+        st.rerun()
+
+
+def _role_checkboxes(key_prefix: str, current: list, default_if_empty: str = "") -> list:
+    cols = st.columns(4)
+    chosen = []
+    for i, r in enumerate(ROLE_KEYS):
+        checked = (r in current) if current else (r == default_if_empty)
+        if cols[i].checkbox(f"{ROLE_INFO[r]['emoji']} {r} ({ROLE_INFO[r]['nama']})", value=checked, key=f"{key_prefix}_{r}"):
+            chosen.append(r)
+    return chosen
+
+
+def _attr_inputs(key_prefix: str, current: dict) -> dict:
+    cols = st.columns(6)
+    out = {}
+    for i, attr in enumerate(ALL_ATTRS):
+        with cols[i % 6]:
+            out[attr] = st.number_input(attr, 1, 99, int(current.get(attr, 50)), key=f"{key_prefix}_{attr}")
+    return out
+
+
+def render_admin_edit(players: list):
+    if not players:
+        st.info("Belum ada pemain.")
+        return
+    by_id = {p["id"]: p for p in players}
+    if st.session_state.get("edit_select_pid") not in by_id:
+        st.session_state.pop("edit_select_pid", None)
+    pid = st.selectbox("Pilih pemain", list(by_id.keys()), key="edit_select_pid",
+                       format_func=lambda i: f"{i} — {by_id[i]['nama']}")
+    player = by_id[pid]
+    k = f"{pid}_{st.session_state.edit_nonce}"   # nonce: reset field setelah simpan / sinkron
+
+    st.markdown(flat_html(f"""
+    <div class='bng-admin-head'>
+      {resolve_avatar(player, size=84)}
+      <div><div class='t'>{esc(player['nama'])}<small>ID {esc(pid)}</small></div>
+      <div class='d'>{photo_status(player)}</div></div>
+    </div>"""), unsafe_allow_html=True)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        new_nama = st.text_input("Nama", value=player["nama"], key=f"edit_nama_{k}")
+        new_alias = st.text_input("Alias", value=player.get("alias", ""), key=f"edit_alias_{k}")
+    with c2:
+        ovr_slot = st.empty()
+        new_photo = st.text_input("Photo URL (opsional)", value=player.get("photo_url", ""), key=f"edit_photo_{k}")
+
+    st.markdown("**Roles**")
+    new_roles = _role_checkboxes(f"edit_role_{k}", player.get("roles", []))
+    st.markdown("**Attributes (1-99)**")
+    new_attrs = _attr_inputs(f"edit_attr_{k}", player.get("attributes", {}))
+
+    new_ovr = calculate_overall(new_attrs)
+    old_ovr = calculate_overall(player.get("attributes", {}))
+    ovr_slot.metric("Overall Rating (otomatis)", new_ovr,
+                    delta=(new_ovr - old_ovr) if new_ovr != old_ovr else None,
+                    help="Rata-rata 12 stat, dihitung otomatis. Sama dengan rumus di kolom OVERALL Google Sheet.")
+
+    b1, b2 = st.columns(2)
+    if b1.button("💾 Simpan", type="primary", width="stretch", key=f"edit_save_{k}"):
+        if not new_roles:
+            st.error("⚠️ Pilih minimal 1 role!")
+        else:
+            # pertahankan urutan preferensi posisi (1st..4th) yang sudah ada
+            ordered = [r for r in player.get("roles", []) if r in new_roles]
+            ordered += [r for r in new_roles if r not in ordered]
+            padded = ordered + [""] * (4 - len(ordered))
+            player["nama"] = new_nama.strip() or player["nama"]
+            player["alias"] = new_alias.strip()
+            player["overall"] = new_ovr
+            player["roles"] = ordered
+            player["photo_url"] = new_photo.strip()
+            player["attributes"] = new_attrs
+            player["main_position"] = ordered[0]
+            player["positions"] = {"1st": padded[0], "2nd": padded[1], "3rd": padded[2], "4th": padded[3]}
+            if store.save_players(players):
+                refresh_players()
+                st.session_state.edit_nonce += 1
+                st.session_state.flash = ("success", f"✅ Data '{player['nama']}' tersimpan. OVR: {new_ovr}.")
+                st.rerun()
+            else:
+                load_players(force=True)   # buang perubahan yang gagal disimpan
+                st.error(f"⚠️ {store.last_error or 'Gagal menyimpan.'}")
+    if b2.button("🗑️ Hapus", width="stretch", key=f"edit_del_{k}"):
+        confirm_delete_dialog(pid)
+
+
+def render_admin_add(players: list):
+    nonce = st.session_state.add_nonce
+    new_id = next_player_id(players)
+    c1, c2 = st.columns(2)
+    with c1:
+        new_nama = st.text_input("Nama *", placeholder="Nama lengkap", key=f"add_nama_{nonce}")
+        new_alias = st.text_input("Alias", placeholder="Nama panggilan", key=f"add_alias_{nonce}")
+    with c2:
+        ovr_slot = st.empty()
+        new_photo = st.text_input("Photo URL (opsional)", placeholder="https://...", key=f"add_photo_{nonce}")
+
+    preview = {"id": new_id, "nama": new_nama.strip() or "?", "alias": new_alias.strip()}
+    st.markdown(flat_html(f"""
+    <div class='bng-admin-head'>
+      {resolve_avatar(preview, size=64)}
+      <div><div class='t'>ID otomatis: {new_id}</div>
+      <div class='d'>📷 Foto: unggah ke folder Drive dengan nama file <code>{new_id}.jpg</code> (JPG/PNG/WebP).</div></div>
+    </div>"""), unsafe_allow_html=True)
+
+    st.markdown("**Roles**")
+    new_roles = _role_checkboxes(f"add_role_{nonce}", [], default_if_empty="A")
+    st.markdown("**Attributes (default 50)**")
+    new_attrs = _attr_inputs(f"add_attr_{nonce}", {})
+    ovr_slot.metric("Overall Rating (otomatis)", calculate_overall(new_attrs),
+                    help="Rata-rata 12 stat, dihitung otomatis.")
+
+    if st.button("➕ Tambah Pemain", type="primary", width="stretch", key=f"add_submit_{nonce}"):
+        if not new_nama.strip():
+            st.error("⚠️ Nama wajib diisi!")
+        elif not new_roles:
+            st.error("⚠️ Pilih minimal 1 role!")
+        else:
+            padded = new_roles + [""] * (4 - len(new_roles))
+            new_player = {
+                "id": new_id, "nama": new_nama.strip(), "alias": new_alias.strip(),
+                "overall": calculate_overall(new_attrs), "roles": new_roles, "main_position": new_roles[0],
+                "positions": {"1st": padded[0], "2nd": padded[1], "3rd": padded[2], "4th": padded[3]},
+                "attributes": new_attrs, "photo_url": new_photo.strip(),
+            }
+            players.append(new_player)
+            if store.save_players(players):
+                refresh_players()
+                st.session_state.add_nonce += 1
+                st.session_state.flash = ("success", f"✅ '{new_player['nama']}' ditambahkan sebagai {new_id}.")
+                st.rerun()
+            else:
+                load_players(force=True)
+                st.error(f"⚠️ {store.last_error or 'Gagal menyimpan.'}")
+
+
 def page_team():
     players = load_players()
     is_admin = st.session_state.is_admin
@@ -2875,11 +3216,18 @@ def page_team():
         s = search.lower()
         shown = [p for p in players if s in p["nama"].lower() or s in p.get("alias", "").lower()]
 
+    open_pid = None
     if shown:
-        cards_html = "".join(player_card(p) for p in shown)
-        st.markdown(flat_html(f"<div class='bng-player-grid bng-animate'>{cards_html}</div>"), unsafe_allow_html=True)
+        with st.container(key="roster"):
+            for p in shown:
+                with st.container(key=f"card_{p['id']}"):
+                    st.markdown(player_card(p), unsafe_allow_html=True)
+                    if st.button(f"Lihat profil {p['nama']}", key=f"cardbtn_{p['id']}"):
+                        open_pid = p["id"]
     else:
         placeholder_box("🔍", "Tidak Ada Pemain Ditemukan", "Coba ubah kata kunci pencarian.")
+    if open_pid:
+        player_profile_dialog(open_pid)
 
     if is_admin:
         st.markdown("---")
@@ -2892,6 +3240,7 @@ def page_team():
             load_players(force=True)
             drive_avatar_map.clear()
             st.session_state["_avatar_retry_at"] = 0
+            st.session_state.edit_nonce += 1
             st.session_state.flash = ("info", "🔄 Data pemain & foto avatar disinkronkan.")
             st.rerun()
         with st.expander("🔌 Status Koneksi Google Sheet", expanded=False):
@@ -2910,124 +3259,10 @@ def page_team():
                 else:
                     st.error("Ada langkah yang gagal. Perbaiki yang bertanda ❌ lalu tes lagi.")
         tab_edit, tab_add = st.tabs(["📝 Edit Pemain", "➕ Tambah Pemain"])
-
         with tab_edit:
-            if not players:
-                st.info("Belum ada pemain.")
-            else:
-                options = {f"{p['id']} — {p['nama']}": p["id"] for p in players}
-                selected_label = st.selectbox("Pilih pemain", list(options.keys()), key="edit_select")
-                pid = options[selected_label]
-                player = next((p for p in players if p["id"] == pid), None)
-
-                if player:
-                    with st.form(f"form_edit_{pid}"):
-                        c1, c2 = st.columns(2)
-                        with c1:
-                            new_nama = st.text_input("Nama", value=player["nama"])
-                            new_alias = st.text_input("Alias", value=player.get("alias", ""))
-                        with c2:
-                            new_overall = st.slider("Overall Rating (1-100)", 1, 100, int(player.get("overall", 50)))
-                            new_photo = st.text_input("Photo URL (opsional)", value=player.get("photo_url", ""))
-
-                        st.markdown("**Roles**")
-                        role_cols = st.columns(4)
-                        new_roles = []
-                        for i, r in enumerate(ROLE_KEYS):
-                            if role_cols[i].checkbox(f"{ROLE_INFO[r]['emoji']} {r} ({ROLE_INFO[r]['nama']})", value=(r in player.get("roles", [])), key=f"edit_role_{pid}_{r}"):
-                                new_roles.append(r)
-
-                        st.markdown("**Attributes (1-99)**")
-                        attr_cols = st.columns(6)
-                        new_attrs = {}
-                        for i, attr in enumerate(ALL_ATTRS):
-                            with attr_cols[i % 6]:
-                                new_attrs[attr] = st.number_input(attr, 1, 99, int(player.get("attributes", {}).get(attr, 50)), key=f"edit_attr_{pid}_{attr}")
-
-                        cbtn1, cbtn2 = st.columns([1, 1])
-                        save = cbtn1.form_submit_button("💾 Simpan", type="primary", width="stretch")
-                        delete = cbtn2.form_submit_button("🗑️ Hapus", width="stretch")
-
-                        if save:
-                            if not new_roles:
-                                st.error("⚠️ Pilih minimal 1 role!")
-                            else:
-                                # pertahankan urutan preferensi posisi (1st..4th) yang sudah ada
-                                ordered_roles = [r for r in player.get("roles", []) if r in new_roles]
-                                ordered_roles += [r for r in new_roles if r not in ordered_roles]
-                                for p in players:
-                                    if p["id"] == pid:
-                                        p["nama"] = new_nama.strip() or p["nama"]
-                                        p["alias"] = new_alias.strip()
-                                        p["overall"] = calculate_overall(new_attrs)
-                                        p["roles"] = ordered_roles
-                                        p["photo_url"] = new_photo.strip()
-                                        p["attributes"] = new_attrs
-                                        p["main_position"] = ordered_roles[0]
-                                        padded = ordered_roles + [""] * (4 - len(ordered_roles))
-                                        p["positions"] = {"1st": padded[0], "2nd": padded[1], "3rd": padded[2], "4th": padded[3]}
-                                        break
-                                if store.save_players(players):
-                                    refresh_players()
-                                    st.session_state.flash = ("success", f"✅ Data '{new_nama}' tersimpan.")
-                                else:
-                                    st.error(f"⚠️ {store.last_error or 'Gagal menyimpan.'}")
-
-                        if delete:
-                            players = [p for p in players if p["id"] != pid]
-                            if store.save_players(players):
-                                refresh_players()
-                                st.session_state.flash = ("warning", f"🗑️ '{player['nama']}' dihapus.")
-                            else:
-                                st.error(f"⚠️ {store.last_error or 'Gagal menghapus.'}")
-
+            render_admin_edit(players)
         with tab_add:
-            with st.form("form_add_player", clear_on_submit=True):
-                c1, c2 = st.columns(2)
-                with c1:
-                    new_nama = st.text_input("Nama *", placeholder="Nama lengkap")
-                    new_alias = st.text_input("Alias", placeholder="Nama panggilan")
-                with c2:
-                    new_overall = st.slider("Overall Rating (1-100)", 1, 100, 50)
-                    new_photo = st.text_input("Photo URL (opsional)", placeholder="https://...")
-
-                st.markdown("**Roles**")
-                role_cols = st.columns(4)
-                new_roles = []
-                for i, r in enumerate(ROLE_KEYS):
-                    if role_cols[i].checkbox(f"{ROLE_INFO[r]['emoji']} {r}", value=(r == "A"), key=f"add_role_{r}"):
-                        new_roles.append(r)
-
-                st.markdown("**Attributes (default 50)**")
-                attr_cols = st.columns(6)
-                new_attrs = {}
-                for i, attr in enumerate(ALL_ATTRS):
-                    with attr_cols[i % 6]:
-                        new_attrs[attr] = st.number_input(attr, 1, 99, 50, key=f"add_attr_{attr}")
-
-                submitted = st.form_submit_button("➕ Tambah Pemain", type="primary", width="stretch")
-                if submitted:
-                    if not new_nama.strip():
-                        st.error("⚠️ Nama wajib diisi!")
-                    elif not new_roles:
-                        st.error("⚠️ Pilih minimal 1 role!")
-                    else:
-                        existing_ids = [p["id"] for p in players]
-                        nums = [int(i[1:]) for i in existing_ids if i.startswith("P") and i[1:].isdigit()]
-                        next_num = (max(nums) + 1) if nums else 1
-                        new_id = f"P{next_num:03d}"
-                        new_player = {
-                            "id": new_id, "nama": new_nama.strip(), "alias": new_alias.strip(),
-                            "overall": int(new_overall), "roles": new_roles, "main_position": new_roles[0],
-                            "positions": {"1st": new_roles[0], "2nd": new_roles[1] if len(new_roles) > 1 else "", "3rd": new_roles[2] if len(new_roles) > 2 else "", "4th": new_roles[3] if len(new_roles) > 3 else ""},
-                            "attributes": new_attrs, "photo_url": new_photo.strip(),
-                        }
-                        players.append(new_player)
-                        if store.save_players(players):
-                            refresh_players()
-                            st.session_state.flash = ("success", f"✅ '{new_player['nama']}' ditambahkan.")
-                        else:
-                            st.error(f"⚠️ {store.last_error or 'Gagal menyimpan.'}")
+            render_admin_add(players)
 
 
 # ==========================================
@@ -3558,9 +3793,12 @@ def page_about():
 # ==========================================
 def main():
     render_navbar()
+    # Slot TETAP untuk pesan: jika pesan muncul/hilang tanpa slot, posisi st.tabs bergeser
+    # dan Streamlit mengembalikan halaman ke tab Home.
+    flash_slot = st.empty()
     if st.session_state.get("flash"):
         kind, msg = st.session_state.flash
-        getattr(st, kind)(msg)
+        getattr(flash_slot, kind)(msg)
         st.session_state.flash = None
 
     tabs = st.tabs(["🏠 Home", "👥 Team", "⚽ Team Generator", "📜 Match History", "ℹ️ About"])
