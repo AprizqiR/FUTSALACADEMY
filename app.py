@@ -894,6 +894,37 @@ label { color: #cbd5e1 !important; }
   .bng-prof-name { font-size: 22px; }
   .bng-prof-ovr { padding: 6px 12px; font-size: 24px; }
 }
+
+/* ---- klik avatar -> foto utuh (v5.9) ---- */
+.st-key-profhead { position: relative; }
+[class*="st-key-profphoto_"] {
+  position: absolute !important; top: 0; left: 0; z-index: 5; margin: 0 !important;
+  width: 160px !important; height: 160px !important;
+}
+[class*="st-key-profphoto_"] [data-testid="stButton"] { width: 100% !important; height: 100% !important; }
+[class*="st-key-profphoto_"] button {
+  width: 100% !important; height: 100% !important; min-height: 100% !important;
+  opacity: 0 !important; cursor: zoom-in; border-radius: 50% !important;
+  background: transparent !important; box-shadow: none !important; border: none !important;
+}
+.st-key-profhead:has([class*="st-key-profphoto_"]:hover) .bng-avatar-xl {
+  transform: scale(1.04); box-shadow: 0 0 0 6px rgba(251,191,36,.30), 0 14px 36px rgba(0,0,0,.55);
+}
+.bng-avatar-xl { transition: transform .18s ease, box-shadow .18s ease; }
+.bng-hint { margin-top: 10px; font-size: 11px; color: #7f8da3; }
+.bng-photo-view { text-align: center; margin: 4px 0 6px; }
+.bng-photo-view img {
+  max-width: 100%; max-height: min(66vh, 640px); object-fit: contain;
+  border-radius: 18px; border: 2px solid var(--bng-yellow);
+  box-shadow: 0 0 0 6px rgba(251,191,36,.14), 0 18px 44px rgba(0,0,0,.55);
+  background: #0B1B38;
+}
+.bng-photo-cap { margin-top: 14px; color: #fff; font-size: 20px; font-weight: 900; }
+.bng-photo-cap span { display: block; font-size: 14px; font-weight: 500; color: #aab6c8; margin-top: 2px; }
+@media (max-width: 640px) {
+  [class*="st-key-profphoto_"] { width: 112px !important; height: 112px !important; }
+  .bng-prof-head { align-items: flex-start; }
+}
 .bng-warn { padding: 12px 14px; border-radius: 12px; margin: 12px 0; font-size: 13px; line-height: 1.5;
   background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.45); color: #fde68a; }
 .bng-admin-head { display: flex; align-items: center; gap: 16px; margin: 8px 0 18px 0; }
@@ -1309,6 +1340,83 @@ def drive_avatar_uri(player: dict, large: bool = False):
         if k and k in amap:
             return amap[k][1 if large else 0]
     return None
+
+AVATAR_FULL_PX = 900   # foto utuh (tanpa dipotong) saat avatar diklik
+
+
+def _make_full_uri(data: bytes, px: int = AVATAR_FULL_PX):
+    """Foto utuh: hanya diperkecil (tidak dipotong), kembalikan data-URI."""
+    try:
+        img = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
+        has_alpha = "A" in img.getbands()
+        img = img.convert("RGBA" if has_alpha else "RGB")
+        img.thumbnail((px, px))
+        buf = io.BytesIO()
+        if has_alpha:
+            img.save(buf, "PNG", optimize=True); mime = "image/png"
+        else:
+            img.save(buf, "JPEG", quality=88); mime = "image/jpeg"
+        return f"data:{mime};base64,{base64.b64encode(buf.getvalue()).decode()}"
+    except Exception:
+        return None
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def drive_file_index(folder_id: str, info_json: str) -> dict:
+    """{nama_file_ternormalisasi: (file_id, modifiedTime)} — tanpa mengunduh foto."""
+    session = _drive_session(json.loads(info_json))
+    images, _ = drive_list_images(session, folder_id)
+    out = {}
+    for f in sorted(images, key=lambda x: x["name"]):
+        key = _norm_key(os.path.splitext(f["name"])[0])
+        if key and key not in out and int(f.get("size") or 0) <= AVATAR_MAX_BYTES:
+            out[key] = (f["id"], f.get("modifiedTime"))
+    return out
+
+
+@st.cache_data(show_spinner=False, max_entries=24)
+def drive_full_photo_uri(file_id: str, modified: str, info_json: str):
+    session = _drive_session(json.loads(info_json))
+    r = session.get(f"https://www.googleapis.com/drive/v3/files/{file_id}",
+                    params={"alt": "media", "supportsAllDrives": "true"}, timeout=40)
+    r.raise_for_status()
+    return _make_full_uri(r.content)
+
+
+def photo_source(player: dict):
+    """Sumber foto pemain (urutan sama dengan resolve_avatar) atau None bila hanya inisial."""
+    folder = _clean_folder_id(_secret("GDRIVE_AVATAR_FOLDER_ID"))
+    info = _service_account_info()
+    if folder and info and _GCreds is not None and AuthorizedSession is not None:
+        try:
+            info_json = json.dumps(info, sort_keys=True)
+            idx = drive_file_index(folder, info_json)
+            for key in (player.get("id"), player.get("alias"), player.get("nama")):
+                k = _norm_key(key)
+                if k and k in idx:
+                    return ("drive", idx[k], info_json)
+        except Exception:
+            pass
+    for ext in ("png", "jpg", "jpeg", "webp"):
+        path = AVATARS_DIR / f"{player.get('id', '')}.{ext}"
+        if path.exists():
+            return ("local", path, None)
+    url = (player.get("photo_url") or "").strip()
+    if url:
+        return ("url", url, None)
+    return None
+
+
+def photo_full_uri(src):
+    kind, ref, extra = src
+    try:
+        if kind == "drive":
+            return drive_full_photo_uri(ref[0], ref[1] or "", extra)
+        if kind == "local":
+            return _make_full_uri(Path(ref).read_bytes())
+        return ref
+    except Exception:
+        return None
 
 
 def _to_int(v, default=50):
@@ -2985,6 +3093,14 @@ def photo_status(player: dict) -> str:
     return f"📷 Belum ada foto di Drive — unggah <code>{player['id']}.jpg</code> (JPG/PNG/WebP) ke folder avatar."
 
 
+def _set_photo_view(pid):
+    st.session_state["prof_photo"] = pid
+
+
+def _clear_photo_view():
+    st.session_state["prof_photo"] = None
+
+
 @st.dialog("Profil Pemain", width="large")
 def player_profile_dialog(pid: str):
     players = load_players()
@@ -2993,6 +3109,20 @@ def player_profile_dialog(pid: str):
         st.warning("Pemain tidak ditemukan.")
         return
     is_admin = bool(st.session_state.get("is_admin", False))
+    src = photo_source(p)
+    if src and st.session_state.get("prof_photo") == pid:       # tampilan foto utuh
+        with st.spinner("Memuat foto…"):
+            full = photo_full_uri(src)
+        if full:
+            st.button("← Kembali ke profil", key=f"prof_back_{pid}", on_click=_clear_photo_view)
+            cap_alias = f"<span>“{esc(p['alias'])}”</span>" if p.get("alias") else ""
+            st.markdown(flat_html(f"""
+            <div class='bng-photo-view'>
+              <img src='{esc(full) if src[0] == "url" else full}' alt='{esc(p['nama'])}'>
+              <div class='bng-photo-cap'>{esc(p['nama'])}{cap_alias}</div>
+            </div>"""), unsafe_allow_html=True)
+            return
+        st.session_state["prof_photo"] = None                    # foto gagal dimuat -> kembali ke profil
     attrs = p.get("attributes", {})
     roles = [r for r in p.get("roles", []) if r in ROLE_INFO][:4]
     pos_items = "".join(
@@ -3000,19 +3130,25 @@ def player_profile_dialog(pid: str):
         for i, (lab, r) in enumerate(zip(("1ST", "2ND", "3RD", "4TH"), roles)))
     alias = p.get("alias", "")
     alias_html = f"<div class='bng-prof-alias'>“{esc(alias)}”</div>" if alias else ""
+    hint_html = "<div class='bng-hint'>🔍 Klik foto untuk memperbesar</div>" if src else ""
     ovr_html = (f"<div class='bng-prof-ovr'><span>OVR</span>{calculate_overall(attrs)}</div>" if is_admin else "")
     left, right = st.columns([11, 10], gap="large")
     with left:
-        st.markdown(flat_html(f"""
-        <div class='bng-prof-head'>
-          {resolve_avatar(p, size=160, css_class='bng-avatar bng-avatar-xl', large=True)}
-          <div class='bng-prof-main'>
-            <div class='bng-prof-name'>{esc(p['nama'])}</div>
-            {alias_html}
-            <div class='bng-prof-pos'>{pos_items}</div>
-          </div>
-          {ovr_html}
-        </div>"""), unsafe_allow_html=True)
+        with st.container(key="profhead"):
+            st.markdown(flat_html(f"""
+            <div class='bng-prof-head'>
+              {resolve_avatar(p, size=160, css_class='bng-avatar bng-avatar-xl', large=True)}
+              <div class='bng-prof-main'>
+                <div class='bng-prof-name'>{esc(p['nama'])}</div>
+                {alias_html}
+                <div class='bng-prof-pos'>{pos_items}</div>
+                {hint_html}
+              </div>
+              {ovr_html}
+            </div>"""), unsafe_allow_html=True)
+            if src:
+                st.button("Lihat foto utuh", key=f"profphoto_{pid}",
+                          on_click=_set_photo_view, args=(pid,))
         st.markdown(radar_chart_svg(
             [c.upper() for c in ATTR_CATEGORIES.keys()],
             [{"label": alias or p["nama"], "values": player_category_values(attrs), "color": "#DC4B14"}],
@@ -3247,6 +3383,7 @@ def page_team():
     else:
         placeholder_box("🔍", "Tidak Ada Pemain Ditemukan", "Coba ubah kata kunci pencarian.")
     if open_pid:
+        st.session_state["prof_photo"] = None
         player_profile_dialog(open_pid)
 
     if is_admin:
