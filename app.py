@@ -862,22 +862,38 @@ label { color: #cbd5e1 !important; }
 [data-testid="stDialog"] [role="dialog"] label { color: #fff !important; }
 [data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] { color: #fff !important; }
 
-.bng-prof-head { display: flex; align-items: center; gap: 18px; margin-bottom: 14px; flex-wrap: wrap; }
-.bng-prof-name { font-size: 1.45rem; font-weight: 800; color: #fff; line-height: 1.15; }
-.bng-prof-alias { color: var(--bng-text-dim); font-size: .9rem; margin-top: 2px; }
-.bng-prof-pos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-.bng-pos-item {
-  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
-  border-radius: 10px; font-size: 12px; font-weight: 700; color: #e0ecf8;
-  background: rgba(255,255,255,.05); border: 1px solid rgba(23,105,194,.35);
+.bng-avatar-xl {
+  width: 160px; height: 160px; border: 3px solid var(--bng-yellow);
+  box-shadow: 0 0 0 5px rgba(251,191,36,.16), 0 12px 32px rgba(0,0,0,.5);
 }
-.bng-pos-item b { color: var(--bng-yellow); font-size: 9px; letter-spacing: .08em; }
+.bng-prof-head { display: flex; align-items: center; gap: 22px; margin-bottom: 18px; }
+.bng-prof-main { min-width: 0; flex: 1; }
+.bng-prof-name { font-size: 28px; font-weight: 900; color: #fff; line-height: 1.12; letter-spacing: -.01em; }
+.bng-prof-alias { color: #aab6c8; font-size: 15px; margin-top: 4px; }
+.bng-prof-pos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.bng-pos-item {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px;
+  border-radius: 10px; font-size: 12px; font-weight: 700; color: #cbd5e1;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(148,163,184,.28);
+}
+.bng-pos-item b { color: #94a3b8; font-size: 9px; letter-spacing: .08em; }
+.bng-pos-item.main {
+  background: linear-gradient(135deg, var(--bng-yellow), #fde68a);
+  border-color: transparent; color: var(--bng-navy);
+}
+.bng-pos-item.main b { color: var(--bng-navy); opacity: .7; }
 .bng-prof-ovr {
-  margin-left: auto; text-align: center; padding: 8px 18px; border-radius: 14px;
+  text-align: center; padding: 8px 18px; border-radius: 14px;
   background: linear-gradient(135deg, var(--bng-yellow), #fde68a); color: var(--bng-navy);
   font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 30px; line-height: 1;
 }
 .bng-prof-ovr span { display: block; font-size: 10px; letter-spacing: .15em; margin-bottom: 4px; }
+@media (max-width: 640px) {
+  .bng-avatar-xl { width: 112px !important; height: 112px !important; font-size: 42px !important; }
+  .bng-prof-head { gap: 14px; flex-wrap: wrap; }
+  .bng-prof-name { font-size: 22px; }
+  .bng-prof-ovr { padding: 6px 12px; font-size: 24px; }
+}
 .bng-warn { padding: 12px 14px; border-radius: 12px; margin: 12px 0; font-size: 13px; line-height: 1.5;
   background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.45); color: #fde68a; }
 .bng-admin-head { display: flex; align-items: center; gap: 16px; margin: 8px 0 18px 0; }
@@ -886,13 +902,14 @@ label { color: #cbd5e1 !important; }
 .bng-admin-head .d { font-size: 12.5px; color: var(--bng-text-dim); margin-top: 3px; }
 .bng-admin-head code { background: rgba(255,255,255,.1); color: #fde68a; padding: 1px 6px; border-radius: 5px; }
 .bng-bar-title {
-  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
-  margin: 14px 0 6px 0; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.08);
+  font-size: 13px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  margin: 22px 0 8px 0; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.1);
 }
-.bng-bar-row { display: grid; grid-template-columns: 112px 1fr 30px; gap: 10px; align-items: center; margin: 6px 0; font-size: 12px; color: #cbd5e1; }
-.bng-bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; }
-.bng-bar > i { display: block; height: 100%; border-radius: 4px; }
-.bng-bar-val { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #fff; text-align: right; font-size: 12px; }
+.bng-bars > .bng-bar-title:first-child { margin-top: 2px; }
+.bng-bar-row { display: grid; grid-template-columns: 132px 1fr 34px; gap: 12px; align-items: center; margin: 6px 0; font-size: 13px; color: #d5deea; }
+.bng-bar { height: 9px; border-radius: 5px; background: rgba(120,160,225,.18); overflow: hidden; }
+.bng-bar > i { display: block; height: 100%; border-radius: 5px; }
+.bng-bar-val { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #fff; text-align: right; font-size: 13px; }
 
 /* ============ ANIMATION ============ */
 @keyframes fadeInUp {
@@ -1175,7 +1192,8 @@ def _gs_client(info_json: str):
 # ==========================================
 # Nama file foto = ID pemain (P001.jpg). Alias / nama pemain juga dikenali.
 AVATAR_MIME_OK = ("image/jpeg", "image/png", "image/webp")
-AVATAR_SIZE_PX = 160
+AVATAR_SIZE_PX = 160    # ukuran untuk kartu roster
+AVATAR_LARGE_PX = 320   # ukuran untuk profil (2x agar tajam di layar retina / HP)
 AVATAR_MAX_BYTES = 15 * 1024 * 1024
 
 
@@ -1215,12 +1233,12 @@ def drive_list_images(session, folder_id: str):
             [f for f in files if f.get("mimeType") not in AVATAR_MIME_OK])
 
 
-def _make_avatar_uri(data: bytes):
+def _make_avatar_uri(data: bytes, px: int = AVATAR_SIZE_PX):
     """Potong persegi + perkecil (agar ringan), kembalikan data-URI."""
     try:
         img = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
         has_alpha = "A" in img.getbands()
-        img = ImageOps.fit(img.convert("RGBA" if has_alpha else "RGB"), (AVATAR_SIZE_PX, AVATAR_SIZE_PX))
+        img = ImageOps.fit(img.convert("RGBA" if has_alpha else "RGB"), (px, px))
         buf = io.BytesIO()
         if has_alpha:
             img.save(buf, "PNG", optimize=True)
@@ -1252,15 +1270,15 @@ def drive_avatar_map(folder_id: str, info_json: str) -> dict:
             r = session.get(f"https://www.googleapis.com/drive/v3/files/{f['id']}",
                             params={"alt": "media", "supportsAllDrives": "true"}, timeout=40)
             r.raise_for_status()
-            return f, _make_avatar_uri(r.content)
+            return f, (_make_avatar_uri(r.content), _make_avatar_uri(r.content, AVATAR_LARGE_PX))
         except Exception:
-            return f, None
+            return f, (None, None)
 
     if todo:
         with ThreadPoolExecutor(max_workers=6) as ex:
-            for f, uri in ex.map(fetch, todo):
-                if uri:
-                    blobs[(f["id"], f.get("modifiedTime"))] = uri
+            for f, (small, large) in ex.map(fetch, todo):
+                if small:
+                    blobs[(f["id"], f.get("modifiedTime"))] = (small, large or small)
     out = {}
     for f in sorted(images, key=lambda x: x["name"]):
         uri = blobs.get((f["id"], f.get("modifiedTime")))
@@ -1270,8 +1288,8 @@ def drive_avatar_map(folder_id: str, info_json: str) -> dict:
     return out
 
 
-def drive_avatar_uri(player: dict):
-    """Data-URI foto pemain dari Drive, atau None (belum diatur / tidak ada / gagal)."""
+def drive_avatar_uri(player: dict, large: bool = False):
+    """Data-URI foto pemain dari Drive (large=True -> 320 px untuk profil), atau None."""
     folder = _clean_folder_id(_secret("GDRIVE_AVATAR_FOLDER_ID"))
     info = _service_account_info()
     if not folder or not info or _GCreds is None or AuthorizedSession is None:
@@ -1289,7 +1307,7 @@ def drive_avatar_uri(player: dict):
     for key in (player.get("id"), player.get("alias"), player.get("nama")):
         k = _norm_key(key)
         if k and k in amap:
-            return amap[k]
+            return amap[k][1 if large else 0]
     return None
 
 
@@ -1823,9 +1841,9 @@ def image_to_base64(path: Path) -> str | None:
         return None
 
 
-def resolve_avatar(player: dict, size: int = 56, css_class: str = "bng-avatar") -> str:
+def resolve_avatar(player: dict, size: int = 56, css_class: str = "bng-avatar", large: bool = False) -> str:
     pid = player.get("id", "")
-    drive_uri = drive_avatar_uri(player)
+    drive_uri = drive_avatar_uri(player, large=large)
     if drive_uri:
         return (f"<div class='{css_class}' style='background:{color_for(player['nama'])};"
                 f"width:{size}px;height:{size}px'>"
@@ -1843,8 +1861,9 @@ def resolve_avatar(player: dict, size: int = 56, css_class: str = "bng-avatar") 
                 f"width:{size}px;height:{size}px'>"
                 f"<img src='{esc(url)}' alt='{esc(player['nama'])}' "
                 f"onerror=\"this.style.display='none'\"></div>")
+    fs = f"font-size:{round(size * 0.38)}px;" if size >= 100 else ""   # inisial ikut membesar
     return (f"<div class='{css_class}' style='background:{color_for(player['nama'])};"
-            f"width:{size}px;height:{size}px'>{esc(initials(player['nama']))}</div>")
+            f"width:{size}px;height:{size}px;{fs}'>{esc(initials(player['nama']))}</div>")
 
 
 def role_chip_html(role: str) -> str:
@@ -2153,7 +2172,8 @@ def compute_team_attributes(team_players, players_db):
     return result
 
 
-def radar_chart_svg(categories, datasets, width=340, height=320, show_legend=True):
+def radar_chart_svg(categories, datasets, width=340, height=320, show_legend=True,
+                    label_size=10, point_r=3.4, stroke_w=2.2, label_gap=20, fluid=False):
     W, H = width, height
     cx, cy = W / 2, H / 2 + 6
     R = min(W, H) / 2 - 46
@@ -2163,7 +2183,9 @@ def radar_chart_svg(categories, datasets, width=340, height=320, show_legend=Tru
     def point(value, angle):
         r = (value / 100.0) * R
         return (cx + r * math.cos(angle), cy + r * math.sin(angle))
-    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" style="display:block;margin:0 auto">']
+    svg_style = ("display:block;margin:0 auto" if not fluid else
+                 f"display:block;margin:0 auto;width:100%;max-width:{int(W * 1.1)}px;height:auto;max-height:44vh")
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="{-24 if fluid else 0} 0 {W + (48 if fluid else 0)} {H}" style="{svg_style}">']
     parts.append(f'<circle cx="{cx}" cy="{cy}" r="{R}" fill="rgba(16,38,77,.4)" stroke="rgba(23,105,194,.2)" stroke-width="1"/>')
     for pct in [0.25, 0.5, 0.75, 1.0]:
         r = R * pct
@@ -2173,16 +2195,16 @@ def radar_chart_svg(categories, datasets, width=340, height=320, show_legend=Tru
         x_end = cx + R * math.cos(ang)
         y_end = cy + R * math.sin(ang)
         parts.append(f'<line x1="{cx}" y1="{cy}" x2="{x_end:.1f}" y2="{y_end:.1f}" stroke="rgba(23,105,194,.35)" stroke-width="1"/>')
-        lx = cx + (R + 20) * math.cos(ang)
-        ly = cy + (R + 20) * math.sin(ang)
+        lx = cx + (R + label_gap) * math.cos(ang)
+        ly = cy + (R + label_gap) * math.sin(ang)
         anchor = "middle" if lx > cx - 8 and lx < cx + 8 else ("end" if lx < cx - 8 else "start")
-        parts.append(f'<text x="{lx:.1f}" y="{ly + 4:.1f}" text-anchor="{anchor}" fill="#94a3b8" font-size="10" font-weight="700" font-family="Inter, sans-serif">{cat.upper()}</text>')
+        parts.append(f'<text x="{lx:.1f}" y="{ly + 4:.1f}" text-anchor="{anchor}" fill="#94a3b8" font-size="{label_size}" font-weight="700" font-family="Inter, sans-serif">{cat.upper()}</text>')
     for ds in datasets:
         pts = [f"{point(v, a)[0]:.1f},{point(v, a)[1]:.1f}" for v, a in zip(ds["values"], angles)]
-        parts.append(f'<polygon points="{" ".join(pts)}" fill="{ds["color"]}" fill-opacity="0.18" stroke="{ds["color"]}" stroke-width="2.2" stroke-linejoin="round"/>')
+        parts.append(f'<polygon points="{" ".join(pts)}" fill="{ds["color"]}" fill-opacity="0.18" stroke="{ds["color"]}" stroke-width="{stroke_w}" stroke-linejoin="round"/>')
         for v, a in zip(ds["values"], angles):
             x, y = point(v, a)
-            parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.4" fill="{ds["color"]}" stroke="#0B1B38" stroke-width="1.6"/>')
+            parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{point_r}" fill="{ds["color"]}" stroke="#0B1B38" stroke-width="1.6"/>')
     if show_legend:
         legend_y = H - 12
         total_legend_width = sum(90 for _ in datasets)
@@ -2949,7 +2971,7 @@ def attr_bars_html(attributes: dict, show_numbers: bool) -> str:
             num = f"<span class='bng-bar-val'>{v}</span>" if show_numbers else "<span></span>"
             out.append(f"<div class='bng-bar-row'><span>{ATTR_NAMES.get(c, c)}</span>"
                        f"<div class='bng-bar'><i style='width:{max(2, min(100, v))}%;background:{color}'></i></div>{num}</div>")
-    return "".join(out)
+    return "<div class='bng-bars'>" + "".join(out) + "</div>"
 
 
 def photo_status(player: dict) -> str:
@@ -2974,35 +2996,33 @@ def player_profile_dialog(pid: str):
     attrs = p.get("attributes", {})
     roles = [r for r in p.get("roles", []) if r in ROLE_INFO][:4]
     pos_items = "".join(
-        f"<span class='bng-pos-item'><b>{lab}</b>{ROLE_INFO[r]['emoji']} {ROLE_INFO[r]['nama']}</span>"
-        for lab, r in zip(("1ST", "2ND", "3RD", "4TH"), roles))
+        f"<span class='bng-pos-item{' main' if i == 0 else ''}'><b>{lab}</b>{ROLE_INFO[r]['emoji']} {ROLE_INFO[r]['nama']}</span>"
+        for i, (lab, r) in enumerate(zip(("1ST", "2ND", "3RD", "4TH"), roles)))
     alias = p.get("alias", "")
     alias_html = f"<div class='bng-prof-alias'>“{esc(alias)}”</div>" if alias else ""
     ovr_html = (f"<div class='bng-prof-ovr'><span>OVR</span>{calculate_overall(attrs)}</div>" if is_admin else "")
-    st.markdown(flat_html(f"""
-    <div class='bng-prof-head'>
-      {resolve_avatar(p, size=110, css_class='bng-avatar')}
-      <div>
-        <div class='bng-prof-name'>{esc(p['nama'])}</div>
-        {alias_html}
-        <div class='bng-prof-pos'>{pos_items}</div>
-      </div>
-      {ovr_html}
-    </div>"""), unsafe_allow_html=True)
-
-    c1, c2 = st.columns(2)
-    with c1:
-        svg = radar_chart_svg(
+    left, right = st.columns([11, 10], gap="large")
+    with left:
+        st.markdown(flat_html(f"""
+        <div class='bng-prof-head'>
+          {resolve_avatar(p, size=160, css_class='bng-avatar bng-avatar-xl', large=True)}
+          <div class='bng-prof-main'>
+            <div class='bng-prof-name'>{esc(p['nama'])}</div>
+            {alias_html}
+            <div class='bng-prof-pos'>{pos_items}</div>
+          </div>
+          {ovr_html}
+        </div>"""), unsafe_allow_html=True)
+        st.markdown(radar_chart_svg(
             [c.upper() for c in ATTR_CATEGORIES.keys()],
             [{"label": alias or p["nama"], "values": player_category_values(attrs), "color": "#DC4B14"}],
-            width=400, height=300, show_legend=False)
-        st.markdown(svg, unsafe_allow_html=True)
-    with c2:
+            width=450, height=392, show_legend=False,
+            label_size=13, point_r=4, stroke_w=3.2, label_gap=22, fluid=True), unsafe_allow_html=True)
+    with right:
         st.markdown(attr_bars_html(attrs, show_numbers=is_admin), unsafe_allow_html=True)
-    if not is_admin:
-        st.caption("Angka detail hanya terlihat oleh admin.")
-    else:
-        if st.button("✏️ Edit pemain ini", type="primary", key=f"prof_edit_{pid}"):
+        if not is_admin:
+            st.caption("Angka detail hanya terlihat oleh admin.")
+        elif st.button("✏️ Edit pemain ini", type="primary", key=f"prof_edit_{pid}"):
             st.session_state["edit_select_pid"] = pid
             st.session_state.flash = ("info", f"✏️ {p['nama']} dipilih di “Kelola Database Pemain” (gulir ke bawah).")
             st.rerun()
@@ -3018,7 +3038,7 @@ def confirm_delete_dialog(pid: str):
     st.markdown(flat_html(f"""
     <div class='bng-prof-head'>
       {resolve_avatar(p, size=84, css_class='bng-avatar')}
-      <div><div class='bng-prof-name'>{esc(p['nama'])}</div>
+      <div><div class='bng-prof-name' style='font-size:1.45rem'>{esc(p['nama'])}</div>
       <div class='bng-prof-alias'>ID {esc(pid)}{' · “' + esc(p.get('alias', '')) + '”' if p.get('alias') else ''}</div></div>
     </div>"""), unsafe_allow_html=True)
     st.markdown("<div class='bng-warn'>⚠️ Baris pemain ini akan dihapus dari Google Sheet. "
